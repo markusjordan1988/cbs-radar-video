@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>cbs RADAR – Every shipment. Every item. On your radar. (30 s)</title>
+<style>
+:root{
+  --o:#FF7A1A; --o2:#FFA54F; --o3:#FFE3C8;
+  --navy:#07131F; --navy2:#0D2136; --ink:#12263A; --mute:#5E6E80;
+  --line:#E4E9EF; --bgapp:#F3F5F8; --ok:#1E9E6A; --warn:#E39B12; --bad:#D6453B;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:Inter,"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:var(--navy)}
+.abs{position:absolute}
+.layer{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#radarBg{background:radial-gradient(1200px 800px at 65% 45%,#11294A 0%,#0A1A2D 45%,#06101C 100%)}
+#sky{background:linear-gradient(180deg,#040A14 0%,#0A1A2D 42%,#1F2440 66%,#5A3341 80%,#C2603B 90%,#FF9A4A 100%)}
+#sun{left:600px;top:640px;width:900px;height:600px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,190,110,.95),rgba(255,140,60,.55) 30%,rgba(255,110,40,.18) 62%,rgba(255,110,40,0))}
+#captions{pointer-events:none}
+.cap{position:absolute;left:110px;top:540px;width:600px;transform:translateY(-50%);color:#fff;font-weight:750;font-size:60px;line-height:1.08;letter-spacing:-.02em}
+.cap .w{display:inline-block;will-change:transform,opacity;white-space:pre}
+.cap .bar{position:absolute;left:-34px;top:8px;width:8px;height:calc(100% - 16px);border-radius:4px;background:var(--o)}
+.cap em{font-style:normal;color:var(--o)}
+.chip{position:absolute;left:0;top:0;display:flex;align-items:center;gap:10px;padding:10px 18px 10px 12px;border-radius:999px;background:rgba(12,26,44,.86);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;font-weight:600;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.chip i{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;font-style:normal;font-size:16px;font-weight:800}
+.chip i.q{background:var(--o);color:#fff}
+.chip i.doc{background:#fff;color:var(--ink);border-radius:6px}
+.chip i.open{background:transparent;border:3px solid var(--warn);width:18px;height:18px;margin:4px}
+.chip i.bad{background:var(--bad);color:#fff}
+.logo{display:flex;align-items:center;gap:.22em;font-size:120px;line-height:1;white-space:nowrap}
+.logo svg{width:1.55em;height:1.55em;overflow:visible;flex:none}
+.logo .wm{font-weight:850;letter-spacing:-.03em}
+.logo .wm b{font-weight:850;color:#fff}
+.logo .wm span{font-weight:700;color:var(--o);letter-spacing:.1em;margin-left:.18em}
+.logo.dark .wm b{color:var(--ink)}
+#logoBig{left:0;top:0;transform-origin:0 0}
+#cam{transform-origin:0 0}
+#laptop{left:742px;top:168px;width:1104px;transform-origin:50% 60%}
+.lid{position:relative;width:1104px;padding:22px;border-radius:28px 28px 8px 8px;background:linear-gradient(180deg,#1B2633,#0E151E);box-shadow:0 40px 90px rgba(0,0,0,.55),inset 0 0 0 2px #2A3746}
+.lid:before{content:"";position:absolute;left:50%;top:9px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#33475C}
+.screen{position:relative;width:1060px;height:662px;overflow:hidden;border-radius:6px;background:var(--bgapp);color:var(--ink);font-size:13px}
+.base{position:relative;left:-60px;width:1224px;height:26px;border-radius:0 0 26px 26px;background:linear-gradient(180deg,#C9D2DC,#7E8B99);box-shadow:0 20px 40px rgba(0,0,0,.5)}
+.base:before{content:"";position:absolute;left:50%;top:0;width:150px;height:9px;margin-left:-75px;border-radius:0 0 10px 10px;background:#9AA6B3}
+.scr{position:absolute;inset:0}
+.shell{height:44px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#12263A;color:#fff}
+.shell .mini{display:flex;align-items:center;gap:7px;font-weight:800;font-size:15px}
+.shell .mini svg{width:22px;height:22px}
+.shell .mini span{color:var(--o);letter-spacing:.08em;font-weight:700}
+.shell .sep{width:1px;height:20px;background:rgba(255,255,255,.25)}
+.shell .app{font-weight:600;font-size:14px;opacity:.95}
+.shell .search{margin-left:auto;width:330px;height:28px;border-radius:14px;background:rgba(255,255,255,.12);display:flex;align-items:center;padding:0 12px;font-size:12px;color:rgba(255,255,255,.65)}
+.shell .ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;opacity:.85}
+.shell .av{width:28px;height:28px;border-radius:50%;background:var(--o);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.page{padding:16px 20px}
+.phdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+.h1{font-size:22px;font-weight:750;letter-spacing:-.01em}
+.sub{font-size:12px;color:var(--mute);margin-top:3px}
+.pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:13px;background:#fff;border:1px solid var(--line);font-size:11.5px;color:var(--ink);margin-left:6px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 3px rgba(18,38,58,.06)}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr 286px;grid-template-rows:108px 108px 222px;gap:12px}
+.tile{padding:13px 15px;position:relative}
+.tile .tl{font-size:12px;color:var(--mute);font-weight:600}
+.tile .tv{font-size:34px;font-weight:780;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .td{font-size:11.5px;color:var(--mute);margin-top:2px}
+.tile .td.up{color:var(--ok)}
+.tile .tv.red{color:var(--bad)}
+.tile .tag{position:absolute;right:12px;top:12px;font-size:10px;font-weight:700;color:var(--mute);background:var(--bgapp);border-radius:5px;padding:2px 6px}
+.ct{font-size:12.5px;font-weight:700;padding:12px 14px 0}
+.ct small{font-weight:500;color:var(--mute);margin-left:6px}
+#radarCard{grid-column:4;grid-row:1 / span 2}
+#chartCard{grid-column:1 / span 3}
+.bars14{display:flex;align-items:flex-end;gap:10px;height:150px;padding:10px 16px 0}
+.bars14 div{flex:1;border-radius:4px 4px 0 0;background:#C9D6E3;transform-origin:bottom}
+.bars14 div.hi{background:var(--o)}
+.ax{display:flex;justify-content:space-between;padding:6px 16px 0;font-size:10.5px;color:var(--mute)}
+.dest{padding:8px 14px}
+.dest .r{display:flex;align-items:center;gap:8px;margin:9px 0;font-size:12px}
+.dest .r .n{width:96px}
+.dest .r .b{flex:1;height:8px;border-radius:4px;background:var(--bgapp);overflow:hidden}
+.dest .r .b i{display:block;height:100%;background:#2E5C86;border-radius:4px}
+.dest .r .v{width:34px;text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+.crumb{font-size:11.5px;color:var(--mute);margin-bottom:6px}
+.crumb b{color:#2464A8;font-weight:600}
+.ohdr{display:flex;align-items:center;gap:12px}
+.badge{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;font-size:11px;font-weight:700}
+.badge.info{background:#E3EEFA;color:#1F5C9C}
+.badge.warn{background:#FFF0DC;color:#B56A00}
+.badge.ok{background:#E2F5EC;color:#14794F}
+.attrs{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:12px 0 10px}
+.attrs div{font-size:11px;color:var(--mute)}
+.attrs div b{display:block;font-size:13px;color:var(--ink);margin-top:2px;font-weight:650}
+.tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--mute)}
+.tabs span{padding:8px 0}
+.tabs span.on{color:var(--ink);border-bottom:3px solid var(--o)}
+table.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tbl th{text-align:left;font-size:11px;color:var(--mute);font-weight:650;padding:9px 12px;background:#F8FAFC;border-bottom:1px solid var(--line)}
+.tbl td{padding:0 12px;height:40px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.num,.tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+.mono{font-family:"SF Mono",Consolas,"Roboto Mono",monospace;font-size:12px}
+.du{display:inline-block;padding:2px 7px;border-radius:5px;background:var(--o);color:#fff;font-weight:700;font-size:11px}
+#chat{position:absolute;right:0;top:44px;bottom:0;width:440px;background:#fff;box-shadow:-18px 0 40px rgba(18,38,58,.18);display:flex;flex-direction:column}
+.chh{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.chh .ai{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--o),#FF4F6A);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+.chh b{font-size:14px}
+.chh small{display:block;font-size:11px;color:var(--mute);font-weight:500}
+.chb{flex:1;padding:14px 16px;position:relative;overflow:hidden}
+.msgU{margin-left:auto;max-width:330px;background:#12263A;color:#fff;padding:10px 13px;border-radius:14px 14px 4px 14px;font-size:13px;line-height:1.35}
+.msgA{margin-top:12px;max-width:400px;background:var(--bgapp);padding:12px 13px;border-radius:14px 14px 14px 4px;font-size:13px;line-height:1.4}
+.hb{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:11.5px}
+.hb .n{width:92px}
+.hb .b{flex:1;height:14px}
+.hb .b i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#FF8C33,var(--o));transform-origin:left}
+.hb .v{width:40px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.evl{margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#C05600;border:1.5px solid var(--o);border-radius:8px;padding:4px 9px;background:#fff}
+.dots{display:inline-flex;gap:4px;padding:4px 0}
+.dots i{width:7px;height:7px;border-radius:50%;background:#9AA7B5}
+.chi{margin:12px 16px 16px;height:46px;border:1.5px solid var(--line);border-radius:12px;display:flex;align-items:center;padding:0 12px;font-size:13.5px;gap:8px}
+.chi .send{margin-left:auto;width:30px;height:30px;border-radius:8px;background:var(--o);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
+.caret{display:inline-block;width:2px;height:17px;background:var(--o);vertical-align:-3px;margin-left:1px}
+#evid{position:absolute;right:452px;top:60px;width:430px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px rgba(18,38,58,.25);padding:14px 16px;transform-origin:right center}
+#evid h4{margin:0;font-size:14px;display:flex;align-items:center;gap:8px}
+#evid .kv{display:grid;grid-template-columns:96px 1fr;gap:6px 10px;font-size:11.5px;margin:12px 0}
+#evid .kv span{color:var(--mute)}
+#evid table{width:100%;border-collapse:collapse;font-size:11.5px}
+#evid td,#evid th{padding:6px 4px;border-top:1px solid var(--line);text-align:left}
+#evid th{color:var(--mute);font-weight:600;font-size:10.5px}
+#evid .rec{margin-top:10px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ok);background:#E9F7F0;border-radius:8px;padding:8px 10px}
+#check{position:absolute;width:64px;height:64px;border-radius:50%;background:var(--o);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(255,122,26,.5)}
+#zoom{background:radial-gradient(900px 700px at 64% 48%,#132C4C 0%,#0A1A2D 55%,#06101C 100%)}
+#ctr{left:1070px;top:300px;width:340px;height:360px;perspective:1400px}
+.cbox{position:absolute;inset:0;border-radius:6px;background:#1A1F27;box-shadow:inset 0 0 60px rgba(0,0,0,.9),0 30px 70px rgba(0,0,0,.6);border:10px solid #C65A12}
+.cbox:after{content:"";position:absolute;inset:0;background:radial-gradient(closest-side,rgba(255,170,90,.18),transparent)}
+.door{position:absolute;top:0;width:50%;height:100%;background:repeating-linear-gradient(90deg,#F07A1E 0 14px,#D9661A 14px 18px,#FF8B33 18px 30px);border:6px solid #B3500F}
+.door.l{left:0;transform-origin:left center}
+.door.r{right:0;transform-origin:right center}
+.door:before,.door:after{content:"";position:absolute;top:16px;bottom:16px;width:5px;border-radius:3px;background:#6C3008}
+.door.l:before{right:24px}.door.l:after{right:52px}
+.door.r:before{left:24px}.door.r:after{left:52px}
+.clabel{position:absolute;left:50%;top:-78px;transform:translateX(-50%);white-space:nowrap;color:#fff;text-align:center;font-size:22px;font-weight:700}
+.clabel small{display:block;font-size:16px;font-weight:500;color:#AFC0D3;margin-top:4px}
+.parcel{position:absolute;left:0;top:0;width:120px;height:104px;margin:-52px 0 0 -60px}
+.pbody{position:absolute;inset:0;border-radius:6px;background:linear-gradient(180deg,#D6A266,#B8834A);box-shadow:0 14px 30px rgba(0,0,0,.45)}
+.pbody:before{content:"";position:absolute;left:50%;top:0;bottom:0;width:18px;margin-left:-9px;background:rgba(255,236,200,.55)}
+.flap{position:absolute;top:0;width:50%;height:30px;background:#C99257;border:1px solid rgba(0,0,0,.12)}
+.flap.l{left:0;transform-origin:left top}.flap.r{right:0;transform-origin:right top}
+.plabel{position:absolute;left:50%;bottom:-34px;transform:translateX(-50%);color:#fff;font-size:18px;font-weight:700;white-space:nowrap}
+#card{left:0;top:0;background:#fff;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.55);overflow:hidden;color:var(--ink);border:3px solid var(--o)}
+#card .in{padding:24px 28px;width:554px}
+#card .k{font-size:15px;font-weight:700;color:var(--o);letter-spacing:.06em}
+#card .t{font-size:28px;font-weight:780;margin:6px 0 16px;letter-spacing:-.01em}
+#card .row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid var(--line);font-size:19px}
+#card .row span{color:var(--mute)}
+#card .row b{font-weight:750}
+#card .row .du{font-size:17px;padding:4px 10px;color:#fff;font-weight:700}
+#end{background:#fff}
+#endRadar{left:460px;top:-70px;width:1000px;height:1000px}
+#endLogo{left:0;top:300px;width:1920px;display:flex;justify-content:center}
+#endTag{left:0;top:575px;width:1920px;text-align:center;font-size:58px;font-weight:780;color:var(--ink);letter-spacing:-.02em}
+#endTag .w{display:inline-block;white-space:pre}
+#endTag em{font-style:normal;color:var(--o)}
+#endBadges{left:0;top:700px;width:1920px;display:flex;justify-content:center;gap:18px}
+.eb{display:flex;align-items:center;gap:10px;height:52px;padding:0 24px;border-radius:26px;border:2px solid #DCE3EA;font-size:22px;font-weight:650;color:var(--ink);background:#fff}
+.eb i{width:12px;height:12px;border-radius:50%;background:#0A6ED1}
+#cta{left:0;top:800px;width:1920px;display:flex;justify-content:center}
+#cta div{height:70px;padding:0 40px;border-radius:35px;background:var(--o);color:#fff;font-size:28px;font-weight:750;display:flex;align-items:center;gap:14px;box-shadow:0 14px 34px rgba(255,122,26,.4)}
+#ui{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:min(900px,94vw);display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;background:rgba(10,18,28,.85);color:#fff;font-size:13px;transition:opacity .4s;z-index:10}
+#ui button{background:rgba(255,255,255,.12);border:0;color:#fff;height:32px;min-width:36px;padding:0 10px;border-radius:8px;cursor:pointer;font:inherit;font-weight:600}
+#ui button.on{background:var(--o)}
+#ui input{flex:1;accent-color:#FF7A1A}
+#ui .tm{font-variant-numeric:tabular-nums;width:92px;text-align:center;opacity:.85}
+body.idle #ui{opacity:0}
+body.idle{cursor:none}
+body.clean #ui{display:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="radarBg" class="layer"></div>
+  <div id="sky" class="layer"><div id="sun" class="abs"></div></div>
+  <canvas id="globe" class="layer" width="1920" height="1080"></canvas>
+  <svg id="port" class="layer" viewBox="0 0 1920 1080"></svg>
+  <div id="chips" class="layer"></div>
+  <div id="logoBig" class="abs"><div class="logo" data-logo="big"></div></div>
+
+  <!-- ZOOM: container > parcel > item -->
+  <div id="zoom" class="layer">
+    <canvas id="zoomRings" class="layer" width="1920" height="1080"></canvas>
+    <div id="ctr" class="abs">
+      <div class="clabel">Export declaration <span id="declNo1"></span><small id="declRoute1"></small></div>
+      <div class="cbox"></div>
+      <div class="door l"></div><div class="door r"></div>
+    </div>
+    <div id="parcels"></div>
+  </div>
+
+  <!-- CAMERA + LAPTOP -->
+  <div id="cam" class="layer">
+    <div id="laptop" class="abs">
+      <div class="lid"><div class="screen" id="screen">
+
+        <!-- 01 / 02 / 04  COCKPIT -->
+        <div id="scrCockpit" class="scr">
+          <div class="shell"><div class="mini" data-logo="mini"></div><div class="sep"></div><div class="app">Export Cockpit</div>
+            <div class="search">⌕&nbsp; Search declarations, items, HS codes …</div><div class="ic">🔔</div><div class="av">AM</div></div>
+          <div class="page">
+            <div class="phdr">
+              <div><div class="h1">Good morning, Anna</div><div class="sub">Your customs situation · Friday, 6 November 2026 · Data as of 07:30</div></div>
+              <div><span class="pill">Company code 1000 · Hamburg</span><span class="pill">Last 24 h ▾</span></div>
+            </div>
+            <div class="grid">
+              <div class="card tile" data-k="1284"><div class="tl">Open export declarations</div><div class="tv">1,284</div><div class="td up">▲ 3.1 % vs. yesterday</div><span class="tag">01</span></div>
+              <div class="card tile" data-k="216"><div class="tl">Awaiting customs release</div><div class="tv">216</div><div class="td">Ø waiting time 3.4 h</div></div>
+              <div class="card tile" data-k="37"><div class="tl">Blocked by compliance</div><div class="tv red">37</div><div class="td">12 sanctions · 25 licence checks</div></div>
+              <div id="radarCard" class="card"><div class="ct">Live radar <small>1,284 shipments</small></div><svg id="miniRadar" width="284" height="196" viewBox="0 0 284 196"></svg></div>
+              <div class="card tile" data-k="58"><div class="tl">Dual-use items in process</div><div class="tv">58</div><div class="td">across 21 declarations</div></div>
+              <div class="card tile" data-k="9"><div class="tl">Licences expiring ≤ 30 days</div><div class="tv">9</div><div class="td">Renewal recommended</div></div>
+              <div class="card tile" data-k="412"><div class="tl">Released yesterday</div><div class="tv">412</div><div class="td up">▲ 98.6 % on time</div></div>
+              <div id="chartCard" class="card"><div class="ct">Export declarations <small>last 14 days</small><span class="tag" style="float:right;font-size:10px;color:#5E6E80;background:#F3F5F8;border-radius:5px;padding:2px 6px">02</span></div>
+                <div class="bars14" id="bars14"></div>
+                <div class="ax"><span>24 Oct</span><span>27 Oct</span><span>30 Oct</span><span>2 Nov</span><span>5 Nov</span></div></div>
+              <div id="destCard" class="card"><div class="ct">Top destinations <small>Q3 2026</small></div>
+                <div class="dest">
+                  <div class="r"><span class="n">United States</span><span class="b"><i style="width:100%"></i></span><span class="v">27 %</span></div>
+                  <div class="r"><span class="n">China</span><span class="b"><i style="width:70%"></i></span><span class="v">19 %</span></div>
+                  <div class="r"><span class="n">Brazil</span><span class="b"><i style="width:49%"></i></span><span class="v">13 %</span></div>
+                  <div class="r"><span class="n">India</span><span class="b"><i style="width:47%"></i></span><span class="v">13 %</span></div>
+                  <div class="r"><span class="n">United Kingdom</span><span class="b"><i style="width:43%"></i></span><span class="v">12 %</span></div>
+                  <div class="r"><span class="n">Mexico</span><span class="b"><i style="width:36%"></i></span><span class="v">10 %</span></div>
+                </div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10 / 12  DECLARATION > ITEMS -->
+        <div id="scrItems" class="scr">
+          <div class="shell"><div class="mini" data-logo="mini"></div><div class="sep"></div><div class="app">Export Declarations</div>
+            <div class="search">⌕&nbsp; Search declarations, items, HS codes …</div><div class="ic">🔔</div><div class="av">AM</div></div>
+          <div class="page">
+            <div class="crumb"><b>Export Cockpit</b> › <b>Declarations</b> › <span id="declNo2"></span></div>
+            <div class="ohdr"><div class="h1" id="declNo3"></div><span class="badge warn">In process</span><span class="badge info">SAP GTS</span></div>
+            <div class="attrs">
+              <div>Customs office of export<b>DE004851 Hamburg</b></div>
+              <div>Destination<b id="destAttr"></b></div>
+              <div>Consignee<b id="consignee"></b></div>
+              <div>Total value<b>€ 1,284,310</b></div>
+              <div>Items<b>5</b></div>
+            </div>
+            <div class="tabs"><span class="on">Items (5)</span><span>Documents (4)</span><span>Licences (1)</span><span>History</span></div>
+            <table class="tbl" id="itemTbl">
+              <thead><tr><th>Item</th><th>Product</th><th>HS code</th><th>Origin</th><th class="num">Value (EUR)</th><th>Dual-use</th><th>Licence status</th></tr></thead>
+              <tbody>
+                <tr><td>10</td><td>Crankshaft forging</td><td class="mono">8483 10 95</td><td>DE</td><td class="num">112,480</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+                <tr><td>20</td><td>Fuel injection pump</td><td class="mono">8413 30 20</td><td>DE</td><td class="num">238,900</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+                <tr id="hlRow"><td>30</td><td><b id="itemName2"></b></td><td class="mono"><b id="hsRow"></b></td><td>DE</td><td class="num"><b id="valRow"></b></td><td><span class="du" id="duRow"></span></td><td><span class="badge warn">Licence check</span></td></tr>
+                <tr><td>40</td><td>Engine control unit</td><td class="mono">8537 10 91</td><td>DE</td><td class="num">361,288</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+                <tr><td>50</td><td>Spare parts kit</td><td class="mono">8409 99 00</td><td>DE</td><td class="num">142,000</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 09 EVIDENCE -->
+          <div id="evid">
+            <h4><span style="color:#FF7A1A">◎</span> Evidence <span class="badge info" style="margin-left:auto">3,912 declarations</span></h4>
+            <div class="kv">
+              <span>Source</span><b>SAP GTS · export declarations</b>
+              <span>Period</span><b>Q3 2026 · 01 Jul – 30 Sep</b>
+              <span>Filter</span><b>Procedure = Export · Status ≠ cancelled</b>
+              <span>Grouped by</span><b>Country of destination</b>
+            </div>
+            <table>
+              <tr><th>Declaration</th><th>Destination</th><th>Released</th><th>Items</th></tr>
+              <tr><td class="mono">EX-2026-0038821</td><td>United States</td><td>14 Jul</td><td>3</td></tr>
+              <tr><td class="mono">EX-2026-0039107</td><td>China</td><td>22 Jul</td><td>7</td></tr>
+              <tr><td class="mono">EX-2026-0041264</td><td>Brazil</td><td>09 Aug</td><td>5</td></tr>
+              <tr><td class="mono">EX-2026-0043390</td><td>India</td><td>02 Sep</td><td>2</td></tr>
+            </table>
+            <div class="rec">✓ Reconciled with SAP GTS: 3,912 of 3,912 · query run 07:31</div>
+          </div>
+
+          <!-- 07 / 08 CHAT -->
+          <div id="chat">
+            <div class="chh"><div class="ai">✦</div><div><b>Ask RADAR</b><small>Answers from your SAP GTS data · with evidence</small></div></div>
+            <div class="chb">
+              <div id="msgU" class="msgU">How many declarations last quarter – by country?</div>
+              <div id="msgA" class="msgA">
+                <div id="aDots" class="dots"><i></i><i></i><i></i></div>
+                <div id="aBody">In <b>Q3 2026</b> you filed <b>3,912</b> export declarations. By country of destination:
+                  <div class="hbars" id="hbars"></div>
+                  <div class="evl" id="evl">◎ Evidence · 3,912 records</div>
+                </div>
+              </div>
+            </div>
+            <div class="chi"><span id="typed"></span><span class="caret" id="caret"></span><div class="send">➤</div></div>
+          </div>
+          <div id="check"><svg width="34" height="34" viewBox="0 0 34 34"><path id="checkPath" d="M7 18 L14 25 L28 9" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="40" stroke-dashoffset="40"/></svg></div>
+        </div>
+
+      </div></div>
+      <div class="base"></div>
+    </div>
+  </div>
+
+  <div id="flash" class="layer"></div>
+  <div id="card" class="abs"><div class="in">
+    <div class="k" id="cardK"></div>
+    <div class="t" id="itemName1"></div>
+    <div class="row"><span>HS code</span><b class="mono" style="font-size:19px" id="hsCard"></b></div>
+    <div class="row"><span>Destination</span><b id="destCard2"></b></div>
+    <div class="row"><span>Value</span><b id="valCard"></b></div>
+    <div class="row"><span>Dual-use</span><span class="du" id="duCard"></span></div>
+  </div></div>
+
+  <div id="captions" class="layer"></div>
+
+  <!-- END CARD -->
+  <div id="end" class="layer">
+    <svg id="endRadar" class="abs" viewBox="-500 -500 1000 1000"></svg>
+    <div id="endLogo" class="abs"><div class="logo dark" data-logo="end" style="font-size:118px"></div></div>
+    <div id="endTag" class="abs"></div>
+    <div id="endBadges" class="abs"><div class="eb" id="eb1"><i></i>Built on SAP BTP</div><div class="eb" id="eb2"><i></i>Connected to SAP GTS</div></div>
+    <div id="cta" class="abs"><div id="ctaBtn">Request a demo <span>→</span></div></div>
+  </div>
+</div>
+
+<div id="ui">
+  <button id="bPlay" title="Play / pause (Space)">❚❚</button>
+  <button id="bRestart" title="Restart (R)">↺</button>
+  <input id="scrub" type="range" min="0" max="30" step="0.01" value="0">
+  <span class="tm" id="tm">0.0 / 30.0 s</span>
+  <button id="bVO" title="Voice-over preview via browser speech (V)">VO</button>
+  <button id="bLoop" title="Loop (L)">Loop</button>
+  <button id="bFs" title="Fullscreen (F)">⛶</button>
+</div>
+<script>
+/* =====================================================================
+   cbs RADAR – 30 s motion video (1920×1080, timeline-driven, scrubbable)
+   URL params: ?t=12.5 (seek+pause) · ?clean=1 (hide controls) · ?loop=1 · ?vo=1
+   Keys: Space play/pause · R restart · ←/→ ±1 s · V voice-over · L loop · F fullscreen
+   ===================================================================== */
+
+/* ---- Item example (colleague feedback: Brazil instead of India) ------
+   To switch back to India, use the commented values.                   */
+const ITEM = {
+  declaration: 'EX-2026-0045187',
+  route:       'Hamburg → Santos · 5 items',          // India: 'Hamburg → Nhava Sheva · 5 items'
+  name:        'Diesel engine assembly, 6-cyl.',
+  hs:          '8408 90 41',
+  destination: 'Brazil',                              // India: 'India'
+  consignee:   'Motores Paulista Ltda.',              // India: 'Pune Engineering Pvt. Ltd.'
+  value:       '€ 429,642',
+  valueRow:    '429,642',
+  dualUse:     '5A002'
+};
+const QUESTION = 'How many declarations last quarter – by country?';
+const BARS = [['United States',1046],['China',734],['Brazil',512],['India',498],['United Kingdom',451],['Mexico',377],['Other',294]];
+const VO = [
+  [0.2,  'Every day, goods cross borders – by sea, by air, by road.'],
+  [4.2,  'Behind every shipment: declarations, items, details.'],
+  [8.3,  'cbs RADAR puts it all on your radar.'],
+  [11.4, 'Your customs situation every morning, at a glance.'],
+  [15.3, 'From the container, to the parcel, down to the single item.'],
+  [21.3, 'Just ask – and get answers with evidence.'],
+  [26.3, 'cbs RADAR. Every shipment. Every item. On your radar.']
+];
+const DURATION = 30;
+
+/* ---- helpers ---- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const D2R = Math.PI / 180, TAU = Math.PI * 2;
+const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+const P = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, x) => a + (b - a) * x;
+const eOut = x => 1 - Math.pow(1 - x, 3);
+const eIn = x => x * x * x;
+const eIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const eBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const fmt = n => Math.round(n).toLocaleString('en-US');
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const show = (el, on) => { const v = on ? 'visible' : 'hidden'; if (el.style.visibility !== v) el.style.visibility = v; };
+
+/* ---- logo ---- */
+let LID = 0;
+function logoIcon(dark) {
+  const id = 'lg' + (LID++);
+  return `<svg viewBox="-100 -100 200 200" class="lic"><defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="-80" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#FF7A1A" stop-opacity="0"/><stop offset="1" stop-color="#FF7A1A" stop-opacity=".8"/></linearGradient></defs>
+  <circle r="92" fill="none" stroke="#FF7A1A" stroke-width="8"/>
+  <circle r="60" fill="none" stroke="#FF7A1A" stroke-opacity=".5" stroke-width="5"/>
+  <circle r="28" fill="none" stroke="#FF7A1A" stroke-opacity=".35" stroke-width="4"/>
+  <g class="sw"><path d="M0 0 L-79.7 -46 A92 92 0 0 1 0 -92 Z" fill="url(#${id})"/><line x1="0" y1="0" x2="0" y2="-92" stroke="#FF7A1A" stroke-width="7" stroke-linecap="round"/></g>
+  <circle cx="-30" cy="-52" r="17" fill="#FF7A1A" fill-opacity=".25"/><circle cx="-30" cy="-52" r="9" fill="#FF7A1A"/>
+  <circle r="9" fill="${dark ? '#12263A' : '#fff'}"/></svg>`;
+}
+$$('[data-logo]').forEach(el => {
+  const k = el.dataset.logo;
+  if (k === 'mini') el.innerHTML = logoIcon(false) + '<b>cbs</b><span>RADAR</span>';
+  else el.innerHTML = logoIcon(k === 'end') + '<div class="wm"><b>cbs</b><span>RADAR</span></div>';
+});
+
+/* ---- fill item data ---- */
+[['#declNo1', ITEM.declaration], ['#declNo2', ITEM.declaration], ['#declNo3', ITEM.declaration], ['#declRoute1', ITEM.route],
+ ['#destAttr', ITEM.destination], ['#consignee', ITEM.consignee], ['#itemName1', ITEM.name], ['#itemName2', ITEM.name],
+ ['#hsRow', ITEM.hs], ['#hsCard', ITEM.hs], ['#valRow', ITEM.valueRow], ['#valCard', ITEM.value], ['#duRow', ITEM.dualUse],
+ ['#duCard', ITEM.dualUse + ' · licence check'], ['#destCard2', ITEM.destination], ['#cardK', 'ITEM 30 · ' + ITEM.declaration]
+].forEach(([s, v]) => $(s).textContent = v);
+
+/* =====================================================================
+   GLOBE DATA (coarse continents → dotted land)
+   ===================================================================== */
+const LAND = [
+  [[-168,66],[-162,70],[-150,71],[-140,70],[-128,70],[-115,68],[-100,68],[-95,72],[-85,70],[-80,64],[-90,58],[-94,60],[-85,55],[-80,52],[-78,58],[-75,62],[-68,60],[-62,56],[-56,52],[-60,47],[-66,44],[-70,42],[-74,40],[-76,37],[-76,35],[-81,31],[-80,26],[-81,25],[-83,29],[-86,30],[-90,29],[-94,29],[-97,27],[-97,22],[-95,18],[-91,18],[-90,21],[-87,21],[-88,16],[-84,15],[-83,11],[-81,8],[-78,8],[-80,7],[-85,10],[-87,13],[-92,14],[-96,16],[-105,20],[-106,23],[-110,24],[-112,29],[-115,30],[-117,32],[-121,35],[-123,38],[-124,42],[-124,47],[-127,50],[-131,54],[-136,58],[-141,60],[-148,60],[-152,58],[-158,56],[-162,58],[-166,62]],
+  [[-73,78],[-60,82],[-30,83],[-20,80],[-20,72],[-30,68],[-40,65],[-44,60],[-50,64],[-55,70],[-60,76]],
+  [[-80,9],[-75,11],[-72,12],[-63,11],[-60,8],[-52,5],[-50,0],[-44,-2],[-38,-4],[-35,-7],[-35,-10],[-39,-15],[-40,-20],[-42,-23],[-48,-26],[-49,-29],[-53,-34],[-58,-35],[-57,-38],[-62,-40],[-65,-42],[-65,-46],[-68,-50],[-69,-52],[-72,-54],[-75,-50],[-74,-44],[-73,-38],[-72,-30],[-71,-20],[-76,-14],[-80,-6],[-81,-3],[-80,1],[-78,4],[-77,8]],
+  [[-9,37],[-9,43],[-1,43.5],[-4,48],[1,50],[4,51.5],[8,54],[9,57],[11,54],[14,54],[20,55],[21,57],[24,59],[28,60],[30,60],[34,65],[40,66],[44,68],[55,69],[60,70],[70,73],[80,73],[90,76],[100,78],[112,76],[120,73],[130,71],[140,72],[150,71],[160,70],[170,70],[180,68],[180,65],[175,62],[163,60],[163,56],[157,51],[155,57],[150,59],[142,59],[136,54],[141,52],[140,48],[135,43],[130,42],[129,35],[126,35],[126,38],[122,40],[121,37],[119,35],[122,31],[121,28],[117,23],[110,21],[107,21],[106,17],[109,12],[105,9],[103,10],[100,13],[100,8],[103,1.5],[101,3],[98,8],[98,16],[94,17],[92,22],[88,22],[86,20],[80,15],[80,10],[77,8],[73,16],[73,21],[68,23],[66,25],[62,25],[57,25],[56,27],[52,28],[50,30],[48,30],[50,27],[52,24],[56,24],[56,26],[58,23],[59,22],[55,17],[52,16],[45,13],[43,13],[39,21],[35,28],[34,28],[32,31],[35,33],[36,36],[30,36],[27,37],[26,40],[23,40],[22,37],[21,39],[19,42],[16,43],[13,45],[12,44],[16,41],[18,40],[16,38],[15,40],[12,42],[10,44],[8,44],[3,43],[0,39],[-2,37],[-5,36]],
+  [[-17,21],[-16,28],[-10,30],[-9,33],[-6,36],[0,36],[10,37],[11,33],[20,31],[25,32],[32,31],[34,28],[38,22],[43,12],[51,12],[48,5],[42,-1],[40,-5],[39,-10],[41,-15],[35,-20],[35,-24],[32,-28],[28,-33],[20,-35],[18,-32],[15,-27],[12,-18],[13,-12],[12,-5],[9,-1],[9,4],[5,6],[-2,5],[-8,4],[-13,8],[-17,14]],
+  [[44,-25],[47,-25],[50,-15],[49,-12],[44,-17]],
+  [[5,58],[8,58],[11,59],[12,56],[14,56],[16,57],[19,60],[18,63],[22,65],[25,65],[24,60],[28,60],[30,62],[30,70],[25,71],[18,70],[13,67],[10,63],[5,61]],
+  [[-5,50],[1,51],[2,53],[-1,55],[-2,57],[-5,58.6],[-6,57],[-5,55],[-3,54],[-4,52]],
+  [[-10,52],[-6,52],[-6,55],[-10,54]],
+  [[114,-22],[114,-34],[118,-35],[124,-33],[131,-31],[138,-35],[141,-38],[146,-39],[150,-37],[153,-32],[153,-25],[146,-19],[145,-15],[142,-11],[141,-17],[136,-12],[132,-11],[129,-15],[123,-17]],
+  [[130,31],[135,34],[140,35],[141,39],[142,43],[145,44],[141,45],[140,41],[136,37],[132,35]],
+  [[95,5],[98,4],[104,-2],[106,-6],[102,-4]],
+  [[109,1],[110,-3],[116,-4],[119,1],[117,7],[113,3]],
+  [[105,-6],[114,-7],[114,-8.5],[106,-7]]
+];
+function inPoly(x, y, poly) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) c = !c;
+  }
+  return c;
+}
+const DOTS = [];
+for (let lat = -56; lat <= 82; lat += 1.8) {
+  const step = 1.8 / Math.max(.2, Math.cos(lat * D2R));
+  for (let lon = -180; lon < 180; lon += step)
+    if (LAND.some(p => inPoly(lon, lat, p))) DOTS.push({ lon, sl: Math.sin(lat * D2R), cl: Math.cos(lat * D2R) });
+}
+
+const PORTS = { HAM:[10,53.5], NYC:[-74,40.7], RTM:[4.5,51.9], SSZ:[-46.3,-23.9], BOM:[72.8,19], ANR:[4.4,51.2], LOS:[3.4,6.5],
+  GOA:[8.9,44.4], DXB:[55.3,25.3], FRA:[8.7,50], SIN:[103.8,1.3], DUR:[31,-29.9], LEH:[0.1,49.5], YMQ:[-73.5,45.5], BCN:[2.2,41.4],
+  ALY:[29.9,31.2], CPT:[18.4,-33.9], JED:[39.2,21.5], PIR:[23.6,37.9], LIS:[-9.1,38.7], ABJ:[-4,5.3], GDN:[18.6,54.4], MBA:[39.7,-4], KHI:[67,24.8] };
+const vec = ([lon, lat]) => [Math.cos(lat*D2R)*Math.cos(lon*D2R), Math.cos(lat*D2R)*Math.sin(lon*D2R), Math.sin(lat*D2R)];
+function makeRoute(a, b, t0, chaos, i) {
+  const A = vec(PORTS[a]), B = vec(PORTS[b]);
+  const om = Math.acos(clamp(A[0]*B[0] + A[1]*B[1] + A[2]*B[2], -1, 1));
+  const N = 48, S = [];
+  for (let k = 0; k <= N; k++) {
+    const s = k / N, f1 = Math.sin((1 - s) * om) / Math.sin(om), f2 = Math.sin(s * om) / Math.sin(om);
+    const v = [f1*A[0] + f2*B[0], f1*A[1] + f2*B[1], f1*A[2] + f2*B[2]];
+    S.push({ lon: Math.atan2(v[1], v[0]) / D2R, lat: Math.asin(clamp(v[2], -1, 1)) / D2R, alt: 1 + (0.03 + 0.12 * om) * Math.sin(Math.PI * s) * (chaos ? .7 : 1) });
+  }
+  return { S, t0, chaos, ph: (i * 0.137) % 1, A: PORTS[a], B: PORTS[b] };
+}
+const ROUTES = [
+  ['HAM','NYC'],['RTM','SSZ'],['HAM','BOM'],['ANR','LOS'],['GOA','DXB'],['FRA','SIN'],['DXB','DUR'],['LEH','YMQ'],['BCN','ALY'],['NYC','SSZ'],['LOS','SSZ'],['CPT','RTM']
+].map((r, i) => makeRoute(r[0], r[1], 0.3 + i * 0.2, false, i));
+(() => {
+  const keys = Object.keys(PORTS), R = rng(7);
+  for (let i = 0; i < 16; i++) {
+    let a = keys[Math.floor(R() * keys.length)], b = keys[Math.floor(R() * keys.length)];
+    if (a === b) b = 'HAM';
+    ROUTES.push(makeRoute(a, b, 4.3 + i * 0.19, true, i + 20));
+  }
+})();
+
+/* =====================================================================
+   PORT SCENE (ship · plane · crane · truck) as SVG
+   ===================================================================== */
+(() => {
+  const R = rng(3), pal = ['#FF7A1A','#1F6F8B','#D9D4CB','#2E4A62','#C4472B','#3B8EA5','#E39B12'];
+  const rim = 'stroke="#FF9A4A" stroke-opacity=".45" stroke-width="1.5"';
+  let s = `<defs>
+    <linearGradient id="wat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A2A38"/><stop offset=".22" stop-color="#101C2D"/><stop offset="1" stop-color="#050B14"/></linearGradient>
+    <linearGradient id="refl" x1="0" x2="1"><stop offset="0" stop-color="#FFB070" stop-opacity="0"/><stop offset=".5" stop-color="#FFB070" stop-opacity=".9"/><stop offset="1" stop-color="#FFB070" stop-opacity="0"/></linearGradient>
+    <linearGradient id="trail" gradientUnits="userSpaceOnUse" x1="-90" y1="0" x2="-640" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>`;
+  s += `<rect x="0" y="940" width="1920" height="140" fill="url(#wat)"/>`;
+  for (let i = 0; i < 16; i++) { const w = 460 - i * 24, x = 950 - w / 2 + (R() - .5) * 60; s += `<rect class="refl" x="${x}" y="${948 + i * 8}" width="${w}" height="2.2" fill="url(#refl)" opacity="${.55 - i * .03}"/>`; }
+  // quay
+  s += `<rect x="1478" y="930" width="442" height="150" fill="#0B1726"/><rect x="1478" y="930" width="442" height="3" fill="#FF9A4A" opacity=".55"/>`;
+  // docked ship
+  s += `<path d="M1226 902 L1478 902 L1478 948 L1252 948 Z" fill="#0F2133" ${rim}/>`;
+  [[1262,878],[1328,878],[1394,878],[1262,854],[1328,854],[1394,854],[1262,830],[1328,830]].forEach(([x, y]) =>
+    s += `<rect x="${x}" y="${y}" width="64" height="24" fill="${pal[Math.floor(R() * pal.length)]}" stroke="#08111C" stroke-width="1.5"/>`);
+  // crane (STS)
+  s += `<g fill="#102236" ${rim}>
+    <rect x="1536" y="600" width="12" height="330"/><rect x="1646" y="600" width="12" height="330"/>
+    <path d="M1548 700 L1646 780 L1646 788 L1548 708 Z"/><path d="M1646 700 L1548 780 L1548 788 L1646 708 Z"/>
+    <rect x="1340" y="600" width="470" height="14"/><rect x="1606" y="578" width="62" height="22"/>
+    <path d="M1595 600 L1600 515 L1608 515 L1613 600 Z"/></g>
+    <path d="M1604 518 L1345 602 M1604 518 L1805 602" stroke="#1C3550" stroke-width="3"/>`;
+  s += `<g id="lift"><g id="liftRot"><line id="cab1" x1="0" y1="0" x2="-26" y2="200" stroke="#9FB2C6" stroke-width="1.6"/><line id="cab2" x1="0" y1="0" x2="26" y2="200" stroke="#9FB2C6" stroke-width="1.6"/>
+    <g id="liftBox"><rect x="-32" y="0" width="64" height="24" fill="#FF7A1A" stroke="#08111C" stroke-width="1.5"/><path d="M-24 4 V20 M-14 4 V20 M-4 4 V20 M6 4 V20 M16 4 V20 M26 4 V20" stroke="#C85A0C" stroke-width="2"/></g></g></g>
+    <rect id="trolley" x="-18" y="606" width="36" height="12" fill="#2A4562"/>`;
+  // truck
+  s += `<g id="truck" ${rim} fill="#132A40">
+    <rect x="1712" y="898" width="108" height="9"/><path d="M1822 868 L1856 868 L1868 886 L1868 912 L1822 912 Z"/>
+    <rect x="1844" y="873" width="14" height="12" fill="#FFB070" stroke="none" opacity=".8"/>
+    <circle cx="1730" cy="918" r="10" fill="#060D16"/><circle cx="1752" cy="918" r="10" fill="#060D16"/><circle cx="1800" cy="918" r="10" fill="#060D16"/><circle cx="1852" cy="918" r="10" fill="#060D16"/></g>`;
+  // leaving ship
+  let ship = `<g id="ship"><path d="M190 -10 L360 -4 M190 -2 L330 4" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>
+    <path d="M-200 -46 L170 -46 L182 -60 L198 -60 L186 4 L-170 4 Z" fill="#0F2133" ${rim}/>`;
+  for (let tier = 0; tier < 3; tier++) for (let x = -168; x < 100; x += 27)
+    if (!(tier === 2 && R() < .25)) ship += `<rect x="${x}" y="${-46 - (tier + 1) * 18}" width="26" height="18" fill="${pal[Math.floor(R() * pal.length)]}" stroke="#08111C" stroke-width="1"/>`;
+  ship += `<rect x="112" y="-112" width="40" height="66" fill="#16304A" ${rim}/><rect x="114" y="-104" width="36" height="6" fill="#FFB070" opacity=".85"/><rect x="128" y="-132" width="14" height="20" fill="#1C3550"/></g>`;
+  s += ship;
+  // plane
+  s += `<g id="plane"><line x1="-92" y1="0" x2="-640" y2="0" stroke="url(#trail)" stroke-width="4"/>
+    <path d="M-104 -40 L-88 -40 L-62 -9 L-96 -6 Z" fill="#DCE4EE"/><path d="M-100 -32 L-90 -32 L-82 -22 L-96 -22 Z" fill="#FF7A1A"/>
+    <path d="M-100 -6 C-80 -15 60 -15 92 -8 C104 -5 106 4 94 7 L-90 7 C-98 7 -103 1 -100 -6 Z" fill="#E9EEF4"/>
+    <path d="M70 -9 L86 -9 L88 -5 L72 -5 Z" fill="#20354C"/>
+    <path d="M-12 1 L-44 30 L-28 30 L22 3 Z" fill="#C9D3DE"/><ellipse cx="-14" cy="12" rx="16" ry="6" fill="#B7C3D0"/>
+    <path d="M-84 -2 L-110 -14 L-100 -2 Z" fill="#C9D3DE"/></g>`;
+  $('#port').innerHTML = s;
+})();
+
+/* ---- chips (complexity cloud) ---- */
+const CHIPS = [
+  ['ship',-30,-130,'Export declaration','doc',4.15], ['truck',-70,-170,'Status: open','open',4.45], ['plane',70,-80,'HS code?','q',4.75], ['ship',190,-40,'Destination?','q',5.0],
+  ['globe',-220,-300,'Sanctions check?','q',5.2], ['ship',-40,-215,'Country of origin?','q',5.3], ['globe',200,-330,'Incoterms?','q',5.4], ['plane',-150,-70,'Licence required?','q',5.5],
+  ['truck',-20,-250,'Exit office?','q',5.6], ['globe',330,-200,'Export declaration','doc',5.7], ['ship',210,-150,'Customs value?','q',5.8], ['globe',-310,-170,'Consignee?','q',5.9],
+  ['plane',200,10,'Invoice missing','bad',6.0], ['globe',380,-70,'Status: open','open',6.1], ['truck',-150,-90,'Gross weight?','q',6.2], ['globe',-330,40,'Preference?','q',6.3],
+  ['plane',30,-165,'Dual-use?','q',6.4], ['globe',300,175,'ECCN?','q',6.5], ['globe',-110,-385,'Status: open','open',6.6], ['truck',-40,-330,'Status: blocked','bad',6.7],
+  ['globe',90,-225,'Destination?','q',6.8], ['ship',60,-290,'MRN?','q',6.9], ['globe',-70,-80,'HS code?','q',7.0], ['globe',120,40,'Release date?','q',7.1],
+  ['globe',440,-300,'Export declaration','doc',7.2], ['globe',-250,200,'Packages?','q',7.3]
+].map(([anchor, dx, dy, text, kind, t]) => {
+  const el = document.createElement('div');
+  el.className = 'chip';
+  el.innerHTML = `<i class="${kind}">${kind === 'q' ? '?' : kind === 'doc' ? '≡' : kind === 'bad' ? '!' : ''}</i>${text}`;
+  $('#chips').appendChild(el);
+  return { anchor, dx, dy, t, el };
+});
+
+/* ---- captions ---- */
+const CAPS = [
+  { a: .35,  b: 3.9,  lines: [[.35, 'Every day, goods move *across* *the* *globe.*']] },
+  { a: 4.25, b: 7.9,  lines: [[4.25, 'Thousands of declarations.'], [5.0, '*Countless* *details.*']] },
+  { a: 8.35, b: 9.75, lines: [[8.35, "Now it's all on *your* *radar.*"]] },
+  { a: 11.6, b: 14.9, lines: [[11.6, 'Your customs world at a glance –'], [12.3, '*every* *morning.*']] },
+  { a: 15.95, b: 19.3, lines: [[16.0, 'Container.'], [17.25, 'Parcel.'], [18.45, '*Item.*']] },
+  { a: 19.45, b: 20.95, lines: [[19.45, '→ Down to the *tiniest* *detail.*']] },
+  { a: 21.5, b: 25.8, lines: [[21.5, 'Ask in plain language.'], [24.15, '*Every* *number* *with* *evidence.*']] }
+];
+CAPS.forEach(c => {
+  const el = document.createElement('div');
+  el.className = 'cap';
+  el.innerHTML = '<div class="bar"></div>';
+  c.words = [];
+  c.lines.forEach(([lt, txt]) => {
+    const line = document.createElement('div');
+    txt.split(' ').forEach((w, i, arr) => {
+      const em = /^\*.*\*$/.test(w), span = document.createElement('span');
+      span.className = 'w';
+      span.innerHTML = (em ? '<em>' + w.slice(1, -1) + '</em>' : w) + (i < arr.length - 1 ? ' ' : '');
+      line.appendChild(span);
+      c.words.push({ el: span, t: lt + i * 0.07 });
+    });
+    el.appendChild(line);
+  });
+  c.el = el; c.bar = el.firstChild;
+  $('#captions').appendChild(el);
+});
+
+/* ---- cockpit details ---- */
+const TILES = $$('#scrCockpit .tile').map((el, i) => ({ el, k: +el.dataset.k, tv: el.querySelector('.tv'), t: 12.0 + i * 0.27 }));
+const CARDS = [['#radarCard', 13.65], ['#chartCard', 13.95], ['#destCard', 14.2]].map(([s, t]) => ({ el: $(s), t }));
+const B14 = [82,88,79,91,95,60,52,97,102,99,108,111,64,118];
+$('#bars14').innerHTML = B14.map((v, i) => `<div class="${i === 13 ? 'hi' : ''}" style="height:${v / 118 * 130}px"></div>`).join('');
+const BAR14 = $$('#bars14 div');
+const DESTB = $$('#destCard .b i');
+(() => {
+  const R = rng(11);
+  let s = '<g transform="translate(142 98)">';
+  [84, 56, 28].forEach(r => s += `<circle r="${r}" fill="none" stroke="#FF7A1A" stroke-opacity=".28" stroke-width="1.5"/>`);
+  s += '<path d="M-84 0 H84 M0 -84 V84" stroke="#FF7A1A" stroke-opacity=".15"/>';
+  s += '<g id="mrSweep"><path d="M0 0 L-72.7 -42 A84 84 0 0 1 0 -84 Z" fill="#FF7A1A" fill-opacity=".18"/><line x2="0" y2="-84" stroke="#FF7A1A" stroke-width="2"/></g>';
+  for (let i = 0; i < 16; i++) { const a = R() * TAU, r = 14 + R() * 66; s += `<circle cx="${(Math.cos(a) * r).toFixed(1)}" cy="${(Math.sin(a) * r).toFixed(1)}" r="3" fill="#2E5C86" fill-opacity=".75"/>`; }
+  s += '<circle id="diveHalo" cx="40" cy="-30" r="10" fill="#FF7A1A" fill-opacity=".25"/><circle id="diveDot" cx="40" cy="-30" r="5" fill="#FF7A1A"/></g>';
+  $('#miniRadar').innerHTML = s;
+})();
+
+/* ---- parcels ---- */
+const PARCELS = [10, 20, 30, 40, 50].map((n, i) => {
+  const el = document.createElement('div');
+  el.className = 'parcel abs';
+  el.innerHTML = `<div class="pbody"></div><div class="flap l"></div><div class="flap r"></div><div class="plabel">Item ${n}</div>`;
+  $('#parcels').appendChild(el);
+  return { el, i, fl: el.querySelector('.flap.l'), fr: el.querySelector('.flap.r'), lab: el.querySelector('.plabel') };
+});
+
+/* ---- chat bars ---- */
+$('#hbars').innerHTML = BARS.map(([n, v]) => `<div class="hb"><span class="n">${n}</span><span class="b"><i style="width:${v / BARS[0][1] * 100}%"></i></span><span class="v">0</span></div>`).join('');
+const HB = $$('#hbars .hb').map((el, i) => ({ bar: el.querySelector('i'), v: el.querySelector('.v'), n: BARS[i][1] }));
+
+/* ---- end card radar ---- */
+(() => {
+  let s = '<defs><linearGradient id="endG" gradientUnits="userSpaceOnUse" x1="-460" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#FF7A1A" stop-opacity="0"/><stop offset="1" stop-color="#FF7A1A" stop-opacity=".16"/></linearGradient></defs>';
+  s += '<g id="endRings">';
+  [120, 220, 320, 420].forEach(r => s += `<circle r="${r}" fill="none" stroke="#E3E9F0" stroke-width="2"/>`);
+  s += '<path d="M-470 0 H470 M0 -470 V470" stroke="#EEF2F6" stroke-width="2"/></g>';
+  s += '<g id="endSweep"><path d="M0 0 L-398 -230 A460 460 0 0 1 0 -460 Z" fill="url(#endG)"/><line x2="0" y2="-460" stroke="#FF7A1A" stroke-opacity=".35" stroke-width="3"/></g>';
+  [[-180, -260], [250, -120], [-300, 140], [160, 280], [330, 230]].forEach(([x, y], i) => s += `<g class="eblip" data-a="${Math.atan2(y, x)}"><circle cx="${x}" cy="${y}" r="20" fill="#FF7A1A" fill-opacity=".15"/><circle cx="${x}" cy="${y}" r="7" fill="#FF7A1A" fill-opacity=".7"/></g>`);
+  $('#endRadar').innerHTML = s;
+  const words = 'Every shipment. Every item. *On* *your* *radar.*'.split(' ');
+  $('#endTag').innerHTML = words.map((w, i) => `<span class="w">${/^\*/.test(w) ? '<em>' + w.slice(1, -1) + '</em>' : w}${i < words.length - 1 ? ' ' : ''}</span>`).join('');
+})();
+const EBLIPS = $$('.eblip').map(el => ({ el, a: +el.dataset.a }));
+const ENDW = $$('#endTag .w');
+</script>
+<script>
+/* =====================================================================
+   LAYOUT / MEASUREMENT
+   ===================================================================== */
+const stage = $('#stage');
+function fit() {
+  const w = innerWidth, h = innerHeight, k = Math.min(w / 1920, h / 1080);
+  stage.style.transform = `translate(${(w - 1920 * k) / 2}px,${(h - 1080 * k) / 2}px) scale(${k})`;
+}
+function rectIn(el) {
+  const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect(), k = s.width / 1920;
+  return { x: (r.left - s.left) / k, y: (r.top - s.top) / k, w: r.width / k, h: r.height / k };
+}
+const G = { cx: 1250, cy: 440, R: 340 };
+const LOGO = {}, MINI = { x: 96, y: 56, s: 0.28 };
+let DIVE, ROW, CB;
+function measure() {
+  fit();
+  const lb = $('#logoBig');
+  lb.style.transform = 'none';
+  const w = lb.offsetWidth, h = lb.offsetHeight;
+  LOGO.L = (1920 - w) / 2; LOGO.T = (1080 - h) / 2;
+  lb.style.left = LOGO.L + 'px'; lb.style.top = LOGO.T + 'px';
+  const ic = rectIn(lb.querySelector('svg'));
+  LOGO.cx = ic.x + ic.w / 2; LOGO.cy = ic.y + ic.h / 2; LOGO.r = ic.w / 200 * 92;
+  ['#cam', '#laptop', '#card'].forEach(s => $(s).style.transform = 'none');
+  const d = rectIn($('#diveDot'));
+  DIVE = { x: d.x + d.w / 2, y: d.y + d.h / 2 };
+  ROW = rectIn($('#hlRow'));
+  const c = $('#card');
+  c.style.width = c.style.height = '';
+  const cr = rectIn(c);
+  CB = { w: cr.w, h: cr.h, x: 1240 - cr.w / 2, y: 490 - cr.h / 2 };
+}
+
+/* =====================================================================
+   GLOBE + RADAR (canvas)
+   ===================================================================== */
+const cv = $('#globe'), ctx = cv.getContext('2d');
+const sP0 = Math.sin(24 * D2R), cP0 = Math.cos(24 * D2R);
+const SUN = (() => { const v = [-.7, -.42, .58], l = Math.hypot(...v); return v.map(x => x / l); })();
+let L0 = 0;
+function proj(lon, lat, alt) {
+  const l = (lon - L0) * D2R, p = lat * D2R, cl = Math.cos(p), sl = Math.sin(p), cll = Math.cos(l);
+  return [cl * Math.sin(l) * alt, (cP0 * sl - sP0 * cl * cll) * alt, (sP0 * sl + cP0 * cl * cll) * alt];
+}
+const SW0 = 8.1, SWD = 1.6, OM = TAU / SWD;
+function swAng(t) {
+  if (t <= 10.6) return -Math.PI / 2 + OM * (t - SW0);
+  const k = 2.2;
+  return -Math.PI / 2 + OM * (10.6 - SW0) + OM * (1 - Math.exp(-(t - 10.6) * k)) / k;
+}
+const capT = ang => SW0 + SWD * ((((ang + Math.PI / 2) % TAU) + TAU) % TAU) / TAU;
+
+function strokePts(pts, n) {
+  ctx.beginPath();
+  let pen = false;
+  for (let i = 0; i <= n; i++) {
+    const p = pts[i];
+    if (!p[2]) { pen = false; continue; }
+    if (pen) ctx.lineTo(p[0], p[1]); else { ctx.moveTo(p[0], p[1]); pen = true; }
+  }
+  ctx.stroke();
+}
+
+function drawGlobe(t) {
+  ctx.clearRect(0, 0, 1920, 1080);
+  if (t > 10.85) { show(cv, false); return; }
+  show(cv, true);
+  L0 = lerp(-16, 12, eOut(P(t, 0, 8.6)));
+  const m = eIO(P(t, 9.7, 10.6));
+  const intro = eOut(P(t, 0, 1.2));
+  const fadeAll = (1 - P(t, 10.45, 10.8)) * intro;
+  const R = lerp(G.R * (0.93 + 0.07 * intro), LOGO.r, m);
+  const cx = lerp(G.cx, LOGO.cx, m), cy = lerp(G.cy, LOGO.cy, m), sc = R / G.R;
+  const radarP = P(t, 8.1, 9.4);
+
+  // atmosphere + ocean
+  const oa = (1 - m) * fadeAll;
+  if (oa > 0) {
+    ctx.globalAlpha = oa * (1 - radarP);
+    let g = ctx.createRadialGradient(cx - R * .12, cy + R * .1, R * .92, cx, cy, R * 1.22);
+    g.addColorStop(0, 'rgba(255,150,80,.55)'); g.addColorStop(.4, 'rgba(255,120,60,.15)'); g.addColorStop(1, 'rgba(255,120,60,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.22, 0, TAU); ctx.fill();
+    ctx.globalAlpha = oa * lerp(1, .55, radarP);
+    g = ctx.createRadialGradient(cx - R * .35, cy + R * .3, R * .05, cx, cy, R);
+    g.addColorStop(0, '#1F4268'); g.addColorStop(.6, '#0F2742'); g.addColorStop(1, '#081626');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+  }
+  // land dots
+  const la = lerp(1, .32, P(t, 8.1, 9.7)) * (1 - m) * fadeAll;
+  if (la > .01) {
+    for (const d of DOTS) {
+      const l = (d.lon - L0) * D2R, cll = Math.cos(l);
+      const z = sP0 * d.sl + cP0 * d.cl * cll;
+      if (z < .03) continue;
+      const x = d.cl * Math.sin(l), y = cP0 * d.sl - sP0 * d.cl * cll;
+      const f = clamp((x * SUN[0] + y * SUN[1] + z * SUN[2]) * 1.5 + .35);
+      ctx.globalAlpha = la * (.3 + .7 * z) * (.5 + .5 * f);
+      ctx.fillStyle = `rgb(${lerp(70, 255, f) | 0},${lerp(115, 186, f) | 0},${lerp(170, 120, f) | 0})`;
+      const s = (1.5 + 1.3 * z) * sc;
+      ctx.fillRect(cx + x * R - s / 2, cy - y * R - s / 2, s, s);
+    }
+  }
+  // routes → calm dots
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ROUTES.forEach((r, i) => {
+    const dp = eOut(P(t, r.t0, r.t0 + (r.chaos ? .9 : 1.3)));
+    if (dp <= 0) return;
+    const mid = r.S[24], pm = proj(mid.lon, mid.lat, 1);
+    const ct = capT(Math.atan2(-pm[1], pm[0]));
+    const live = (1 - P(t, ct, ct + .35)) * fadeAll * (1 - m);
+    if (live > 0) {
+      const pts = r.S.map(s => { const p = proj(s.lon, s.lat, s.alt); return [cx + p[0] * R, cy - p[1] * R, p[2] > 0 || (p[0] * p[0] + p[1] * p[1]) > 1]; });
+      const n = Math.max(1, Math.floor(dp * 48));
+      const a = live * (r.chaos ? (.4 + .3 * Math.sin(t * 9 + i * 2)) : .95);
+      ctx.globalAlpha = a * .25; ctx.strokeStyle = '#FF9646'; ctx.lineWidth = 7 * sc; strokePts(pts, n);
+      ctx.globalAlpha = a; ctx.strokeStyle = r.chaos ? '#FF8A5C' : '#FFC48A'; ctx.lineWidth = (r.chaos ? 1.4 : 2.4) * sc; strokePts(pts, n);
+      ctx.fillStyle = '#FFF4E6';
+      if (dp < 1 && pts[n][2]) { ctx.beginPath(); ctx.arc(pts[n][0], pts[n][1], 4 * sc, 0, TAU); ctx.fill(); }
+      if (!r.chaos) {
+        for (let k = 0; k < 2; k++) {
+          const idx = Math.floor(((t * .22 + r.ph + k * .5) % 1) * 48);
+          if (idx < n && pts[idx][2]) { ctx.beginPath(); ctx.arc(pts[idx][0], pts[idx][1], 3.6 * sc, 0, TAU); ctx.fill(); }
+        }
+        [r.A, r.B].forEach(pt => { const p = proj(pt[0], pt[1], 1); if (p[2] > 0) { ctx.globalAlpha = a * .9; ctx.beginPath(); ctx.arc(cx + p[0] * R, cy - p[1] * R, 3.2 * sc, 0, TAU); ctx.fill(); } });
+      }
+    }
+    if (t > ct && pm[2] > 0) {
+      const q = P(t, ct, ct + .8), x = cx + pm[0] * R, y = cy - pm[1] * R;
+      ctx.globalAlpha = (1 - q) * .8 * fadeAll; ctx.strokeStyle = '#FF7A1A'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, (4 + 30 * eOut(q)) * Math.max(sc, .4), 0, TAU); ctx.stroke();
+      ctx.globalAlpha = fadeAll; ctx.fillStyle = '#FF7A1A';
+      ctx.shadowColor = '#FF7A1A'; ctx.shadowBlur = 14 * sc;
+      ctx.beginPath(); ctx.arc(x, y, (r.chaos ? 3.6 : 5.2) * Math.max(sc, .35) * (1 + .12 * Math.sin(t * 3 + i)), 0, TAU); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  });
+  // radar rings + sweep
+  const ra = eOut(P(t, 8.0, 8.6)) * fadeAll;
+  if (ra > 0) {
+    const lw = lerp(2.2, LOGO.r * 8 / 92, m);
+    ctx.strokeStyle = '#FF7A1A';
+    [[1, 1, 1], [.652, .5, .62], [.304, .35, .5]].forEach(([f, al, wf]) => {
+      ctx.globalAlpha = ra * lerp(al * .8, al, m); ctx.lineWidth = lw * wf;
+      ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, TAU); ctx.stroke();
+    });
+    ctx.globalAlpha = ra * .18 * (1 - m); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+    if (t >= SW0) {
+      const a = swAng(t), span = 1.047, N = 24;
+      const ext = 1 - P(t, 9.55, 9.9);
+      ctx.fillStyle = '#FF7A1A';
+      for (let j = 0; j < N; j++) {
+        const a1 = a - span * j / N, a0 = a - span * (j + 1) / N, al = Math.pow(1 - j / N, 1.6);
+        ctx.globalAlpha = ra * .5 * al;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0, a1); ctx.closePath(); ctx.fill();
+        if (ext > 0) { ctx.globalAlpha = ra * .09 * al * ext; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R * 2.7, a0, a1); ctx.closePath(); ctx.fill(); }
+      }
+      ctx.globalAlpha = ra; ctx.lineWidth = lerp(3, LOGO.r * 7 / 92, m);
+      ctx.shadowColor = '#FF7A1A'; ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.stroke();
+      if (ext > 0) { ctx.globalAlpha = ra * .35 * ext; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.lineTo(cx + Math.cos(a) * R * 2.7, cy + Math.sin(a) * R * 2.7); ctx.stroke(); }
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = ra * m; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx, cy, LOGO.r * 9 / 92, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* =====================================================================
+   PORT SCENE
+   ===================================================================== */
+const port = $('#port'), shipEl = $('#ship'), planeEl = $('#plane'), liftRot = $('#liftRot'), liftBox = $('#liftBox'), trolley = $('#trolley');
+const shipX = t => lerp(1030, 760, Math.pow(P(t, 0, 8.6), 1.2));
+function planeState(t) {
+  const P0 = [330, 935], C = [860, 900], P1 = [1180, 730];
+  if (t <= 4.2) {
+    const s = P(t, .15, 4.2), u = 1 - s;
+    const x = u * u * P0[0] + 2 * u * s * C[0] + s * s * P1[0], y = u * u * P0[1] + 2 * u * s * C[1] + s * s * P1[1];
+    const dx = 2 * u * (C[0] - P0[0]) + 2 * s * (P1[0] - C[0]), dy = 2 * u * (C[1] - P0[1]) + 2 * s * (P1[1] - C[1]);
+    return [x, y, Math.atan2(dy, dx) / D2R * .7];
+  }
+  const k = t - 4.2, ang = Math.atan2(-170, 320);
+  return [P1[0] + Math.cos(ang) * 55 * k, P1[1] + Math.sin(ang) * 55 * k, ang / D2R * .7];
+}
+function updPort(t) {
+  const vis = t < 8.75; show(port, vis); if (!vis) return;
+  port.style.opacity = 1 - P(t, 8.0, 8.7);
+  shipEl.setAttribute('transform', `translate(${shipX(t)},${945 + Math.sin(t * 2.2) * 2}) rotate(${Math.sin(t * 1.7) * .6}) scale(.9)`);
+  const [px, py, pa] = planeState(t);
+  planeEl.setAttribute('transform', `translate(${px},${py}) rotate(${pa}) scale(.9)`);
+  planeEl.style.opacity = P(t, .1, .5);
+  const Tx = t < 1.3 ? 1426 : lerp(1426, 1765, eIO(P(t, 1.3, 2.7)));
+  const Hy = t < 1.3 ? lerp(830, 690, eIO(P(t, .5, 1.3))) : t < 2.7 ? 690 : lerp(690, 874, eIO(P(t, 2.7, 3.5)));
+  let sw = 7 * Math.sin(Math.PI * P(t, 1.3, 2.7)) * (t < 2.7 ? -1 : 0);
+  if (t >= 2.7) sw = 4 * Math.sin((t - 2.7) * 7) * Math.exp(-(t - 2.7) * 3);
+  if (t >= 3.5) sw = 0;
+  liftRot.setAttribute('transform', `translate(${Tx},612) rotate(${sw})`);
+  liftBox.setAttribute('transform', `translate(0,${Hy - 612})`);
+  $('#cab1').setAttribute('y2', Hy - 612); $('#cab2').setAttribute('y2', Hy - 612);
+  trolley.setAttribute('transform', `translate(${Tx},0)`);
+}
+
+function anchorPos(a, t) {
+  if (a === 'ship') return [shipX(t), 850];
+  if (a === 'plane') { const p = planeState(t); return [p[0], p[1]]; }
+  if (a === 'truck') return [1790, 860];
+  return [G.cx, G.cy];
+}
+function updChips(t) {
+  CHIPS.forEach(c => {
+    const vis = t >= c.t && t < 9.8; show(c.el, vis); if (!vis) return;
+    const an = anchorPos(c.anchor, t);
+    const x = an[0] + c.dx + Math.sin(t * 1.3 + c.t * 7) * 5, y = an[1] + c.dy + Math.cos(t * 1.1 + c.t * 5) * 4;
+    const ap = P(t, c.t, c.t + .35);
+    const f = P(t, capT(Math.atan2(y - G.cy, x - G.cx)), capT(Math.atan2(y - G.cy, x - G.cx)) + .3);
+    const sc = lerp(.4, 1, eBack(ap)) * lerp(1, .15, eIn(f));
+    c.el.style.opacity = P(t, c.t, c.t + .15) * (1 - f);
+    c.el.style.borderColor = f > 0 ? '#FF7A1A' : '';
+    c.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;
+  });
+}
+
+/* =====================================================================
+   LOGO
+   ===================================================================== */
+const logoBig = $('#logoBig'), lbIcon = logoBig.querySelector('svg'), lbWm = logoBig.querySelector('.wm'), lbSw = logoBig.querySelector('.sw');
+function updLogo(t) {
+  const vis = t >= 9.95 && t < 25.95; show(logoBig, vis); if (!vis) return;
+  lbIcon.style.opacity = P(t, 10.45, 10.75);
+  const w = eOut(P(t, 10.4, 10.95));
+  lbWm.style.opacity = P(t, 10.4, 10.6); lbWm.style.transform = `translateX(${(1 - w) * -40}px)`;
+  lbWm.style.clipPath = `inset(-20% ${(1 - w) * 100}% -20% 0)`;
+  lbSw.setAttribute('transform', `rotate(${(swAng(t) + Math.PI / 2) / D2R})`);
+  const e = eIO(P(t, 10.95, 11.5));
+  logoBig.style.transform = `translate(${(MINI.x - LOGO.L) * e}px,${(MINI.y - LOGO.T) * e}px) scale(${lerp(1, MINI.s, e)})`;
+  logoBig.style.opacity = 1 - P(t, 25.6, 25.95);
+}
+
+/* =====================================================================
+   LAPTOP: cockpit · dive · items · chat
+   ===================================================================== */
+const laptop = $('#laptop'), cam = $('#cam'), flash = $('#flash');
+const scrC = $('#scrCockpit'), scrI = $('#scrItems');
+function updLaptop(t) {
+  const vis = (t >= 11.15 && t < 15.97) || (t >= 19.3 && t < 26.7); show(laptop, vis);
+  if (t < 15.97) {
+    const s = eOut(P(t, 11.15, 11.95));
+    laptop.style.transform = `translateX(${(1 - s) * 1050}px) scale(${lerp(.92, 1, s)})`;
+    laptop.style.opacity = P(t, 11.15, 11.45);
+  } else {
+    const s = eOut(P(t, 19.3, 19.85));
+    laptop.style.transform = `scale(${lerp(.95, 1, s)})`;
+    laptop.style.opacity = s;
+  }
+  const d = P(t, 15.0, 15.95);
+  if (d > 0 && d < 1) {
+    const k = Math.exp(Math.log(160) * d * d), o = eIO(d);
+    cam.style.transform = `translate(${(1240 - DIVE.x) * o}px,${(480 - DIVE.y) * o}px) translate(${DIVE.x}px,${DIVE.y}px) scale(${k}) translate(${-DIVE.x}px,${-DIVE.y}px)`;
+  } else cam.style.transform = 'none';
+  const fo = Math.min(P(t, 15.55, 15.92), 1 - P(t, 15.95, 16.45));
+  show(flash, fo > 0);
+  if (fo > 0) { flash.style.opacity = fo; flash.style.background = 'radial-gradient(circle at 1240px 480px,#FFB070 0,#FF7A1A 35%,#B8480A 100%)'; }
+  show(scrC, t < 17); show(scrI, t >= 17);
+  if (t >= 11.15 && t < 16) updCockpit(t);
+  if (t >= 19.3) updItems(t);
+}
+function glowCss(g) {
+  return g > 0 ? `0 0 0 ${2.5 * g}px rgba(255,122,26,${g}),0 10px 26px rgba(255,122,26,${.28 * g})` : '';
+}
+function updCockpit(t) {
+  TILES.forEach(o => {
+    const h = eOut(P(t, o.t, o.t + .25)), g = h * (1 - .5 * P(t, o.t + .35, o.t + .9));
+    o.el.style.boxShadow = glowCss(g);
+    o.el.style.borderColor = g > 0 ? '#FF7A1A' : '';
+    o.el.style.transform = `translateY(${-3 * g}px)`;
+    o.tv.textContent = fmt(o.k * eOut(P(t, o.t - .15, o.t + .55)));
+  });
+  CARDS.forEach(o => {
+    const h = eOut(P(t, o.t, o.t + .25)), g = h * (1 - .5 * P(t, o.t + .35, o.t + .9));
+    o.el.style.boxShadow = glowCss(g); o.el.style.borderColor = g > 0 ? '#FF7A1A' : '';
+  });
+  BAR14.forEach((b, i) => b.style.transform = `scaleY(${eOut(P(t, 13.95 + i * .03, 14.4 + i * .03))})`);
+  DESTB.forEach((b, i) => b.style.transform = `scaleX(${eOut(P(t, 14.2 + i * .05, 14.7 + i * .05))})`);
+  DESTB.forEach(b => b.style.transformOrigin = 'left');
+  $('#mrSweep').setAttribute('transform', `rotate(${(t * 200) % 360})`);
+  const pulse = P(t, 14.4, 15.0);
+  $('#diveHalo').setAttribute('r', 9 + 3 * Math.sin(t * 7) + 8 * pulse);
+  $('#diveHalo').setAttribute('fill-opacity', .25 + .25 * pulse);
+}
+
+/* zoom scene: container → parcels → item */
+const zoom = $('#zoom'), ctr = $('#ctr'), zr = $('#zoomRings').getContext('2d');
+const doorL = $('.door.l'), doorR = $('.door.r'), clabel = $('.clabel');
+function updZoom(t) {
+  const vis = t >= 15.85 && t < 19.95; show(zoom, vis); if (!vis) return;
+  zoom.style.opacity = 1 - P(t, 19.4, 19.9);
+  zr.clearRect(0, 0, 1920, 1080);
+  zr.strokeStyle = '#FF7A1A';
+  for (let r = 170; r < 1100; r += 170) { zr.globalAlpha = .07; zr.lineWidth = 2; zr.beginPath(); zr.arc(1240, 480, r, 0, TAU); zr.stroke(); }
+  const a = t * 1.2;
+  for (let j = 0; j < 20; j++) { zr.globalAlpha = .06 * (1 - j / 20); zr.fillStyle = '#FF7A1A'; zr.beginPath(); zr.moveTo(1240, 480); zr.arc(1240, 480, 1100, a - .05 * (j + 1), a - .05 * j); zr.closePath(); zr.fill(); }
+  zr.globalAlpha = 1;
+  const ci = eBack(P(t, 15.9, 16.5));
+  ctr.style.transform = `scale(${lerp(.2, 1, ci)})`;
+  ctr.style.opacity = P(t, 15.9, 16.1) * (1 - .82 * eOut(P(t, 18.05, 18.5)));
+  clabel.style.opacity = P(t, 16.15, 16.5);
+  const o = eOut(P(t, 16.55, 17.15));
+  doorL.style.transform = `rotateY(${-108 * o}deg)`; doorR.style.transform = `rotateY(${108 * o}deg)`;
+  PARCELS.forEach(p => {
+    const st = 17.05 + p.i * .1, q = eOut(P(t, st, st + .6));
+    let x = lerp(1240, 1240 + (p.i - 2) * 170, q), y = lerp(500, 800, q) - Math.sin(Math.PI * q) * 60, sc = lerp(.35, 1, q);
+    let op = P(t, st, st + .15);
+    p.lab.style.opacity = P(t, st + .4, st + .7);
+    if (p.i === 2) {
+      const s2 = eIO(P(t, 18.05, 18.6));
+      x = lerp(x, 1240, s2); y = lerp(y, 575, s2); sc *= lerp(1, 1.7, s2);
+      op *= 1 - P(t, 19.0, 19.3);
+      const f = eOut(P(t, 18.45, 18.8));
+      p.fl.style.transform = `rotate(${-140 * f}deg)`; p.fr.style.transform = `rotate(${140 * f}deg)`;
+      p.lab.style.opacity *= 1 - s2;
+    } else op *= 1 - .82 * eOut(P(t, 18.05, 18.5));
+    p.el.style.opacity = op;
+    p.el.style.transform = `translate(${x}px,${y}px) scale(${sc})`;
+  });
+}
+
+const card = $('#card'), cardIn = card.querySelector('.in'), hlCells = $$('#hlRow td');
+function updCard(t) {
+  const vis = t >= 18.55 && t < 20.5; show(card, vis);
+  if (vis) {
+    const e1 = P(t, 18.6, 19.1), m = eIO(P(t, 19.45, 20.2));
+    card.style.left = lerp(CB.x, ROW.x, m) + 'px'; card.style.top = lerp(CB.y, ROW.y, m) + 'px';
+    card.style.width = lerp(CB.w, ROW.w, m) + 'px'; card.style.height = lerp(CB.h, ROW.h, m) + 'px';
+    card.style.transform = `translateY(${(1 - eOut(e1)) * 90}px) scale(${lerp(.15, 1, eBack(e1))})`;
+    card.style.borderRadius = lerp(18, 4, m) + 'px';
+    card.style.background = `rgb(255,${lerp(255, 244, m) | 0},${lerp(255, 234, m) | 0})`;
+    card.style.opacity = P(t, 18.55, 18.7) * (1 - P(t, 20.2, 20.5));
+    cardIn.style.opacity = 1 - P(t, 19.45, 19.65);
+  }
+  const hl = P(t, 20.1, 20.45), pulse = hl * (.5 + .5 * Math.cos((t - 20.45) * 6)) * (1 - P(t, 20.6, 22));
+  hlCells.forEach((td, i) => {
+    td.style.background = hl > 0 ? `rgba(255,122,26,${.13 * hl + .14 * pulse})` : '';
+    if (i === 0) td.style.boxShadow = hl > 0 ? `inset 5px 0 0 rgba(255,122,26,${hl})` : '';
+  });
+}
+
+const chat = $('#chat'), typed = $('#typed'), caret = $('#caret'), msgU = $('#msgU'), msgA = $('#msgA'), aDots = $('#aDots'), aBody = $('#aBody');
+const evid = $('#evid'), check = $('#check'), checkPath = $('#checkPath'), evl = $('#evl');
+check.style.left = '576px'; check.style.top = '28px';
+function updItems(t) {
+  show(chat, t >= 20.9);
+  chat.style.transform = `translateX(${(1 - eOut(P(t, 21.0, 21.6))) * 470}px)`;
+  typed.textContent = t < 23.15 ? QUESTION.slice(0, Math.floor(QUESTION.length * P(t, 21.75, 23.0))) : '';
+  caret.style.opacity = (t > 21.75 && t < 23.0) || Math.floor(t * 2.6) % 2 ? 1 : .15;
+  if (t >= 23.15 && t < 23.4) caret.style.opacity = 0;
+  const q = eOut(P(t, 23.15, 23.4));
+  msgU.style.opacity = q; msgU.style.transform = `translateY(${(1 - q) * 14}px)`;
+  show(msgA, t >= 23.4);
+  const q2 = eOut(P(t, 23.4, 23.6));
+  msgA.style.opacity = q2; msgA.style.transform = `translateY(${(1 - q2) * 14}px)`;
+  aDots.style.display = t < 23.8 ? 'inline-flex' : 'none';
+  aDots.querySelectorAll('i').forEach((d, i) => d.style.transform = `translateY(${-4 * Math.abs(Math.sin(t * 8 + i))}px)`);
+  aBody.style.display = t < 23.8 ? 'none' : 'block';
+  aBody.style.opacity = P(t, 23.8, 24.0);
+  HB.forEach((b, i) => { const g = eOut(P(t, 23.9 + i * .08, 24.5 + i * .08)); b.bar.style.transform = `scaleX(${g})`; b.v.textContent = fmt(b.n * g); });
+  const ep = Math.sin(Math.PI * P(t, 24.35, 24.75));
+  evl.style.boxShadow = `0 0 0 ${6 * ep}px rgba(255,122,26,${.3 * ep})`;
+  show(evid, t >= 24.5);
+  const u = eOut(P(t, 24.55, 25.15));
+  evid.style.clipPath = `inset(0 0 0 ${(1 - u) * 100}% round 14px)`;
+  evid.style.opacity = P(t, 24.55, 24.7);
+  show(check, t >= 25.2);
+  const c = P(t, 25.2, 25.55), rq = P(t, 25.5, 26.1);
+  check.style.opacity = P(t, 25.2, 25.3);
+  check.style.transform = `scale(${lerp(2.6, 1, eBack(c))})`;
+  check.style.boxShadow = `0 10px 30px rgba(255,122,26,.5),0 0 0 ${26 * eOut(rq)}px rgba(255,122,26,${(1 - rq) * .35})`;
+  checkPath.style.strokeDashoffset = 40 * (1 - eOut(P(t, 25.45, 25.75)));
+}
+
+/* =====================================================================
+   CAPTIONS + END CARD
+   ===================================================================== */
+function updCaps(t) {
+  CAPS.forEach(c => {
+    const vis = t >= c.a - .01 && t < c.b; show(c.el, vis); if (!vis) return;
+    const out = 1 - P(t, c.b - .35, c.b);
+    c.words.forEach(w => {
+      const q = eOut(P(t, w.t, w.t + .5));
+      w.el.style.opacity = q * out;
+      w.el.style.transform = `translateY(${(1 - q) * 36 + (1 - out) * -16}px)`;
+    });
+    c.bar.style.opacity = out;
+    c.bar.style.transform = `scaleY(${eOut(P(t, c.a, c.a + .45))})`;
+  });
+}
+const endEl = $('#end'), endSweep = $('#endSweep'), endRings = $('#endRings'), endLogo = $('#endLogo'), endLogoSw = endLogo.querySelector('.sw');
+function updEnd(t) {
+  const vis = t >= 25.85; show(endEl, vis); if (!vis) return;
+  endEl.style.clipPath = `circle(${lerp(0, 1420, eIO(P(t, 25.85, 26.6)))}px at 1240px 480px)`;
+  const rr = eOut(P(t, 26.1, 27));
+  endRings.setAttribute('transform', `scale(${lerp(.7, 1, rr)})`); endRings.style.opacity = rr;
+  const deg = (t - 25.85) * 110;
+  endSweep.setAttribute('transform', `rotate(${deg})`); endSweep.style.opacity = rr;
+  const sa = -Math.PI / 2 + deg * D2R;
+  EBLIPS.forEach(b => { const rel = (((sa - b.a) % TAU) + TAU) % TAU; b.el.style.opacity = rr * (.2 + .8 * Math.exp(-rel * 2.2)); });
+  const q = P(t, 26.35, 26.95);
+  endLogo.style.opacity = P(t, 26.35, 26.6);
+  endLogo.style.transform = `scale(${lerp(.6, 1, eBack(q))})`;
+  endLogoSw.setAttribute('transform', `rotate(${(t - 26.35) * 140})`);
+  ENDW.forEach((w, i) => { const g = eOut(P(t, 26.95 + i * .09, 27.45 + i * .09)); w.style.opacity = g; w.style.transform = `translateY(${(1 - g) * 30}px)`; });
+  [['#eb1', 27.75], ['#eb2', 27.9]].forEach(([s, a]) => { const g = eOut(P(t, a, a + .4)); $(s).style.opacity = g; $(s).style.transform = `translateY(${(1 - g) * 20}px)`; });
+  const g = P(t, 28.3, 28.75), pl = t > 29 ? .5 + .5 * Math.sin((t - 29) * 5) : 0;
+  $('#cta').style.opacity = P(t, 28.3, 28.45);
+  $('#ctaBtn').style.transform = `scale(${lerp(.6, 1, eBack(g))})`;
+  $('#ctaBtn').style.boxShadow = `0 14px 34px rgba(255,122,26,.4),0 0 0 ${10 * pl}px rgba(255,122,26,${.18 * pl})`;
+}
+
+/* =====================================================================
+   MASTER RENDER
+   ===================================================================== */
+const sky = $('#sky'), sun = $('#sun');
+function render(t) {
+  sky.style.opacity = 1 - P(t, 8.0, 9.4); show(sky, t < 9.5);
+  sun.style.transform = `translateY(${lerp(70, 0, eOut(P(t, 0, 6)))}px) scale(${lerp(.9, 1.05, P(t, 0, 8))})`;
+  sun.style.opacity = lerp(.6, 1, P(t, 0, 3));
+  drawGlobe(t); updPort(t); updChips(t); updLogo(t); updLaptop(t); updZoom(t); updCard(t); updCaps(t); updEnd(t);
+}
+
+/* =====================================================================
+   PLAYBACK + CONTROLS
+   ===================================================================== */
+const qs = new URLSearchParams(location.search);
+let T = qs.has('t') ? clamp(+qs.get('t'), 0, DURATION) : 0;
+let playing = !qs.has('t') && qs.get('autoplay') !== '0';
+let loop = qs.get('loop') === '1', voOn = qs.get('vo') === '1', last = performance.now();
+if (qs.get('clean') === '1') document.body.classList.add('clean');
+const bPlay = $('#bPlay'), scrub = $('#scrub'), tm = $('#tm');
+function speak(txt) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(txt);
+  const v = speechSynthesis.getVoices().find(v => /en[-_](GB|US)/i.test(v.lang));
+  if (v) u.voice = v;
+  u.lang = 'en-GB'; u.rate = 1.04;
+  speechSynthesis.speak(u);
+}
+const voStop = () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); };
+function syncUI() {
+  bPlay.textContent = playing ? '❚❚' : '▶';
+  $('#bLoop').classList.toggle('on', loop); $('#bVO').classList.toggle('on', voOn);
+}
+function seek(t) { T = clamp(t, 0, DURATION); voStop(); }
+function toggle() { if (!playing && T >= DURATION) seek(0); playing = !playing; if (!playing) voStop(); syncUI(); }
+function frame(now) {
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  if (playing) {
+    const prev = T; T += dt;
+    if (voOn) VO.forEach(([vt, txt]) => { if (prev < vt && T >= vt) speak(txt); });
+    if (T >= DURATION) { if (loop) seek(0); else { T = DURATION; playing = false; syncUI(); } }
+  }
+  render(T);
+  scrub.value = T; tm.textContent = `${T.toFixed(1)} / ${DURATION.toFixed(1)} s`;
+  requestAnimationFrame(frame);
+}
+bPlay.onclick = toggle;
+$('#bRestart').onclick = () => { seek(0); playing = true; syncUI(); };
+scrub.oninput = () => { seek(+scrub.value); };
+$('#bVO').onclick = () => { voOn = !voOn; if (!voOn) voStop(); syncUI(); };
+$('#bLoop').onclick = () => { loop = !loop; syncUI(); };
+$('#bFs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  else if (e.key === 'r' || e.key === 'R') $('#bRestart').onclick();
+  else if (e.key === 'ArrowRight') seek(T + 1);
+  else if (e.key === 'ArrowLeft') seek(T - 1);
+  else if (e.key === 'v' || e.key === 'V') $('#bVO').onclick();
+  else if (e.key === 'l' || e.key === 'L') $('#bLoop').onclick();
+  else if (e.key === 'f' || e.key === 'F') $('#bFs').onclick();
+});
+let idleTimer;
+addEventListener('mousemove', () => { document.body.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => playing && document.body.classList.add('idle'), 2200); });
+addEventListener('resize', fit);
+window.seekTo = t => { playing = false; seek(t); render(T); syncUI(); };
+
+measure();
+render(T);
+syncUI();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+</script>
+</body>
+</html>

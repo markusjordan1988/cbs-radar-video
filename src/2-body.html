@@ -1,0 +1,158 @@
+<body>
+<div id="stage">
+  <div id="radarBg" class="layer"></div>
+  <div id="sky" class="layer"><div id="sun" class="abs"></div></div>
+  <canvas id="globe" class="layer" width="1920" height="1080"></canvas>
+  <svg id="port" class="layer" viewBox="0 0 1920 1080"></svg>
+  <div id="chips" class="layer"></div>
+  <div id="logoBig" class="abs"><div class="logo" data-logo="big"></div></div>
+
+  <!-- ZOOM: container > parcel > item -->
+  <div id="zoom" class="layer">
+    <canvas id="zoomRings" class="layer" width="1920" height="1080"></canvas>
+    <div id="ctr" class="abs">
+      <div class="clabel">Export declaration <span id="declNo1"></span><small id="declRoute1"></small></div>
+      <div class="cbox"></div>
+      <div class="door l"></div><div class="door r"></div>
+    </div>
+    <div id="parcels"></div>
+  </div>
+
+  <!-- CAMERA + LAPTOP -->
+  <div id="cam" class="layer">
+    <div id="laptop" class="abs">
+      <div class="lid"><div class="screen" id="screen">
+
+        <!-- 01 / 02 / 04  COCKPIT -->
+        <div id="scrCockpit" class="scr">
+          <div class="shell"><div class="mini" data-logo="mini"></div><div class="sep"></div><div class="app">Export Cockpit</div>
+            <div class="search">⌕&nbsp; Search declarations, items, HS codes …</div><div class="ic">🔔</div><div class="av">AM</div></div>
+          <div class="page">
+            <div class="phdr">
+              <div><div class="h1">Good morning, Anna</div><div class="sub">Your customs situation · Friday, 6 November 2026 · Data as of 07:30</div></div>
+              <div><span class="pill">Company code 1000 · Hamburg</span><span class="pill">Last 24 h ▾</span></div>
+            </div>
+            <div class="grid">
+              <div class="card tile" data-k="1284"><div class="tl">Open export declarations</div><div class="tv">1,284</div><div class="td up">▲ 3.1 % vs. yesterday</div><span class="tag">01</span></div>
+              <div class="card tile" data-k="216"><div class="tl">Awaiting customs release</div><div class="tv">216</div><div class="td">Ø waiting time 3.4 h</div></div>
+              <div class="card tile" data-k="37"><div class="tl">Blocked by compliance</div><div class="tv red">37</div><div class="td">12 sanctions · 25 licence checks</div></div>
+              <div id="radarCard" class="card"><div class="ct">Live radar <small>1,284 shipments</small></div><svg id="miniRadar" width="284" height="196" viewBox="0 0 284 196"></svg></div>
+              <div class="card tile" data-k="58"><div class="tl">Dual-use items in process</div><div class="tv">58</div><div class="td">across 21 declarations</div></div>
+              <div class="card tile" data-k="9"><div class="tl">Licences expiring ≤ 30 days</div><div class="tv">9</div><div class="td">Renewal recommended</div></div>
+              <div class="card tile" data-k="412"><div class="tl">Released yesterday</div><div class="tv">412</div><div class="td up">▲ 98.6 % on time</div></div>
+              <div id="chartCard" class="card"><div class="ct">Export declarations <small>last 14 days</small><span class="tag" style="float:right;font-size:10px;color:#5E6E80;background:#F3F5F8;border-radius:5px;padding:2px 6px">02</span></div>
+                <div class="bars14" id="bars14"></div>
+                <div class="ax"><span>24 Oct</span><span>27 Oct</span><span>30 Oct</span><span>2 Nov</span><span>5 Nov</span></div></div>
+              <div id="destCard" class="card"><div class="ct">Top destinations <small>Q3 2026</small></div>
+                <div class="dest">
+                  <div class="r"><span class="n">United States</span><span class="b"><i style="width:100%"></i></span><span class="v">27 %</span></div>
+                  <div class="r"><span class="n">China</span><span class="b"><i style="width:70%"></i></span><span class="v">19 %</span></div>
+                  <div class="r"><span class="n">Brazil</span><span class="b"><i style="width:49%"></i></span><span class="v">13 %</span></div>
+                  <div class="r"><span class="n">India</span><span class="b"><i style="width:47%"></i></span><span class="v">13 %</span></div>
+                  <div class="r"><span class="n">United Kingdom</span><span class="b"><i style="width:43%"></i></span><span class="v">12 %</span></div>
+                  <div class="r"><span class="n">Mexico</span><span class="b"><i style="width:36%"></i></span><span class="v">10 %</span></div>
+                </div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10 / 12  DECLARATION > ITEMS -->
+        <div id="scrItems" class="scr">
+          <div class="shell"><div class="mini" data-logo="mini"></div><div class="sep"></div><div class="app">Export Declarations</div>
+            <div class="search">⌕&nbsp; Search declarations, items, HS codes …</div><div class="ic">🔔</div><div class="av">AM</div></div>
+          <div class="page">
+            <div class="crumb"><b>Export Cockpit</b> › <b>Declarations</b> › <span id="declNo2"></span></div>
+            <div class="ohdr"><div class="h1" id="declNo3"></div><span class="badge warn">In process</span><span class="badge info">SAP GTS</span></div>
+            <div class="attrs">
+              <div>Customs office of export<b>DE004851 Hamburg</b></div>
+              <div>Destination<b id="destAttr"></b></div>
+              <div>Consignee<b id="consignee"></b></div>
+              <div>Total value<b>€ 1,284,310</b></div>
+              <div>Items<b>5</b></div>
+            </div>
+            <div class="tabs"><span class="on">Items (5)</span><span>Documents (4)</span><span>Licences (1)</span><span>History</span></div>
+            <table class="tbl" id="itemTbl">
+              <thead><tr><th>Item</th><th>Product</th><th>HS code</th><th>Origin</th><th class="num">Value (EUR)</th><th>Dual-use</th><th>Licence status</th></tr></thead>
+              <tbody>
+                <tr><td>10</td><td>Crankshaft forging</td><td class="mono">8483 10 95</td><td>DE</td><td class="num">112,480</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+                <tr><td>20</td><td>Fuel injection pump</td><td class="mono">8413 30 20</td><td>DE</td><td class="num">238,900</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+                <tr id="hlRow"><td>30</td><td><b id="itemName2"></b></td><td class="mono"><b id="hsRow"></b></td><td>DE</td><td class="num"><b id="valRow"></b></td><td><span class="du" id="duRow"></span></td><td><span class="badge warn">Licence check</span></td></tr>
+                <tr><td>40</td><td>Engine control unit</td><td class="mono">8537 10 91</td><td>DE</td><td class="num">361,288</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+                <tr><td>50</td><td>Spare parts kit</td><td class="mono">8409 99 00</td><td>DE</td><td class="num">142,000</td><td>–</td><td><span class="badge ok">Not required</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 09 EVIDENCE -->
+          <div id="evid">
+            <h4><span style="color:#FF7A1A">◎</span> Evidence <span class="badge info" style="margin-left:auto">3,912 declarations</span></h4>
+            <div class="kv">
+              <span>Source</span><b>SAP GTS · export declarations</b>
+              <span>Period</span><b>Q3 2026 · 01 Jul – 30 Sep</b>
+              <span>Filter</span><b>Procedure = Export · Status ≠ cancelled</b>
+              <span>Grouped by</span><b>Country of destination</b>
+            </div>
+            <table>
+              <tr><th>Declaration</th><th>Destination</th><th>Released</th><th>Items</th></tr>
+              <tr><td class="mono">EX-2026-0038821</td><td>United States</td><td>14 Jul</td><td>3</td></tr>
+              <tr><td class="mono">EX-2026-0039107</td><td>China</td><td>22 Jul</td><td>7</td></tr>
+              <tr><td class="mono">EX-2026-0041264</td><td>Brazil</td><td>09 Aug</td><td>5</td></tr>
+              <tr><td class="mono">EX-2026-0043390</td><td>India</td><td>02 Sep</td><td>2</td></tr>
+            </table>
+            <div class="rec">✓ Reconciled with SAP GTS: 3,912 of 3,912 · query run 07:31</div>
+          </div>
+
+          <!-- 07 / 08 CHAT -->
+          <div id="chat">
+            <div class="chh"><div class="ai">✦</div><div><b>Ask RADAR</b><small>Answers from your SAP GTS data · with evidence</small></div></div>
+            <div class="chb">
+              <div id="msgU" class="msgU">How many declarations last quarter – by country?</div>
+              <div id="msgA" class="msgA">
+                <div id="aDots" class="dots"><i></i><i></i><i></i></div>
+                <div id="aBody">In <b>Q3 2026</b> you filed <b>3,912</b> export declarations. By country of destination:
+                  <div class="hbars" id="hbars"></div>
+                  <div class="evl" id="evl">◎ Evidence · 3,912 records</div>
+                </div>
+              </div>
+            </div>
+            <div class="chi"><span id="typed"></span><span class="caret" id="caret"></span><div class="send">➤</div></div>
+          </div>
+          <div id="check"><svg width="34" height="34" viewBox="0 0 34 34"><path id="checkPath" d="M7 18 L14 25 L28 9" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="40" stroke-dashoffset="40"/></svg></div>
+        </div>
+
+      </div></div>
+      <div class="base"></div>
+    </div>
+  </div>
+
+  <div id="flash" class="layer"></div>
+  <div id="card" class="abs"><div class="in">
+    <div class="k" id="cardK"></div>
+    <div class="t" id="itemName1"></div>
+    <div class="row"><span>HS code</span><b class="mono" style="font-size:19px" id="hsCard"></b></div>
+    <div class="row"><span>Destination</span><b id="destCard2"></b></div>
+    <div class="row"><span>Value</span><b id="valCard"></b></div>
+    <div class="row"><span>Dual-use</span><span class="du" id="duCard"></span></div>
+  </div></div>
+
+  <div id="captions" class="layer"></div>
+
+  <!-- END CARD -->
+  <div id="end" class="layer">
+    <svg id="endRadar" class="abs" viewBox="-500 -500 1000 1000"></svg>
+    <div id="endLogo" class="abs"><div class="logo dark" data-logo="end" style="font-size:118px"></div></div>
+    <div id="endTag" class="abs"></div>
+    <div id="endBadges" class="abs"><div class="eb" id="eb1"><i></i>Built on SAP BTP</div><div class="eb" id="eb2"><i></i>Connected to SAP GTS</div></div>
+    <div id="cta" class="abs"><div id="ctaBtn">Request a demo <span>→</span></div></div>
+  </div>
+</div>
+
+<div id="ui">
+  <button id="bPlay" title="Play / pause (Space)">❚❚</button>
+  <button id="bRestart" title="Restart (R)">↺</button>
+  <input id="scrub" type="range" min="0" max="30" step="0.01" value="0">
+  <span class="tm" id="tm">0.0 / 30.0 s</span>
+  <button id="bVO" title="Voice-over preview via browser speech (V)">VO</button>
+  <button id="bLoop" title="Loop (L)">Loop</button>
+  <button id="bFs" title="Fullscreen (F)">⛶</button>
+</div>

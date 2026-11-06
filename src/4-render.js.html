@@ -1,0 +1,494 @@
+<script>
+/* =====================================================================
+   LAYOUT / MEASUREMENT
+   ===================================================================== */
+const stage = $('#stage');
+function fit() {
+  const w = innerWidth, h = innerHeight, k = Math.min(w / 1920, h / 1080);
+  stage.style.transform = `translate(${(w - 1920 * k) / 2}px,${(h - 1080 * k) / 2}px) scale(${k})`;
+}
+function rectIn(el) {
+  const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect(), k = s.width / 1920;
+  return { x: (r.left - s.left) / k, y: (r.top - s.top) / k, w: r.width / k, h: r.height / k };
+}
+const G = { cx: 1250, cy: 440, R: 340 };
+const LOGO = {}, MINI = { x: 96, y: 56, s: 0.28 };
+let DIVE, ROW, CB;
+function measure() {
+  fit();
+  const lb = $('#logoBig');
+  lb.style.transform = 'none';
+  const w = lb.offsetWidth, h = lb.offsetHeight;
+  LOGO.L = (1920 - w) / 2; LOGO.T = (1080 - h) / 2;
+  lb.style.left = LOGO.L + 'px'; lb.style.top = LOGO.T + 'px';
+  const ic = rectIn(lb.querySelector('svg'));
+  LOGO.cx = ic.x + ic.w / 2; LOGO.cy = ic.y + ic.h / 2; LOGO.r = ic.w / 200 * 92;
+  ['#cam', '#laptop', '#card'].forEach(s => $(s).style.transform = 'none');
+  const d = rectIn($('#diveDot'));
+  DIVE = { x: d.x + d.w / 2, y: d.y + d.h / 2 };
+  ROW = rectIn($('#hlRow'));
+  const c = $('#card');
+  c.style.width = c.style.height = '';
+  const cr = rectIn(c);
+  CB = { w: cr.w, h: cr.h, x: 1240 - cr.w / 2, y: 490 - cr.h / 2 };
+}
+
+/* =====================================================================
+   GLOBE + RADAR (canvas)
+   ===================================================================== */
+const cv = $('#globe'), ctx = cv.getContext('2d');
+const sP0 = Math.sin(24 * D2R), cP0 = Math.cos(24 * D2R);
+const SUN = (() => { const v = [-.7, -.42, .58], l = Math.hypot(...v); return v.map(x => x / l); })();
+let L0 = 0;
+function proj(lon, lat, alt) {
+  const l = (lon - L0) * D2R, p = lat * D2R, cl = Math.cos(p), sl = Math.sin(p), cll = Math.cos(l);
+  return [cl * Math.sin(l) * alt, (cP0 * sl - sP0 * cl * cll) * alt, (sP0 * sl + cP0 * cl * cll) * alt];
+}
+const SW0 = 8.1, SWD = 1.6, OM = TAU / SWD;
+function swAng(t) {
+  if (t <= 10.6) return -Math.PI / 2 + OM * (t - SW0);
+  const k = 2.2;
+  return -Math.PI / 2 + OM * (10.6 - SW0) + OM * (1 - Math.exp(-(t - 10.6) * k)) / k;
+}
+const capT = ang => SW0 + SWD * ((((ang + Math.PI / 2) % TAU) + TAU) % TAU) / TAU;
+
+function strokePts(pts, n) {
+  ctx.beginPath();
+  let pen = false;
+  for (let i = 0; i <= n; i++) {
+    const p = pts[i];
+    if (!p[2]) { pen = false; continue; }
+    if (pen) ctx.lineTo(p[0], p[1]); else { ctx.moveTo(p[0], p[1]); pen = true; }
+  }
+  ctx.stroke();
+}
+
+function drawGlobe(t) {
+  ctx.clearRect(0, 0, 1920, 1080);
+  if (t > 10.85) { show(cv, false); return; }
+  show(cv, true);
+  L0 = lerp(-16, 12, eOut(P(t, 0, 8.6)));
+  const m = eIO(P(t, 9.7, 10.6));
+  const intro = eOut(P(t, 0, 1.2));
+  const fadeAll = (1 - P(t, 10.45, 10.8)) * intro;
+  const R = lerp(G.R * (0.93 + 0.07 * intro), LOGO.r, m);
+  const cx = lerp(G.cx, LOGO.cx, m), cy = lerp(G.cy, LOGO.cy, m), sc = R / G.R;
+  const radarP = P(t, 8.1, 9.4);
+
+  // atmosphere + ocean
+  const oa = (1 - m) * fadeAll;
+  if (oa > 0) {
+    ctx.globalAlpha = oa * (1 - radarP);
+    let g = ctx.createRadialGradient(cx - R * .12, cy + R * .1, R * .92, cx, cy, R * 1.22);
+    g.addColorStop(0, 'rgba(255,150,80,.55)'); g.addColorStop(.4, 'rgba(255,120,60,.15)'); g.addColorStop(1, 'rgba(255,120,60,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.22, 0, TAU); ctx.fill();
+    ctx.globalAlpha = oa * lerp(1, .55, radarP);
+    g = ctx.createRadialGradient(cx - R * .35, cy + R * .3, R * .05, cx, cy, R);
+    g.addColorStop(0, '#1F4268'); g.addColorStop(.6, '#0F2742'); g.addColorStop(1, '#081626');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fill();
+  }
+  // land dots
+  const la = lerp(1, .32, P(t, 8.1, 9.7)) * (1 - m) * fadeAll;
+  if (la > .01) {
+    for (const d of DOTS) {
+      const l = (d.lon - L0) * D2R, cll = Math.cos(l);
+      const z = sP0 * d.sl + cP0 * d.cl * cll;
+      if (z < .03) continue;
+      const x = d.cl * Math.sin(l), y = cP0 * d.sl - sP0 * d.cl * cll;
+      const f = clamp((x * SUN[0] + y * SUN[1] + z * SUN[2]) * 1.5 + .35);
+      ctx.globalAlpha = la * (.3 + .7 * z) * (.5 + .5 * f);
+      ctx.fillStyle = `rgb(${lerp(70, 255, f) | 0},${lerp(115, 186, f) | 0},${lerp(170, 120, f) | 0})`;
+      const s = (1.5 + 1.3 * z) * sc;
+      ctx.fillRect(cx + x * R - s / 2, cy - y * R - s / 2, s, s);
+    }
+  }
+  // routes → calm dots
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ROUTES.forEach((r, i) => {
+    const dp = eOut(P(t, r.t0, r.t0 + (r.chaos ? .9 : 1.3)));
+    if (dp <= 0) return;
+    const mid = r.S[24], pm = proj(mid.lon, mid.lat, 1);
+    const ct = capT(Math.atan2(-pm[1], pm[0]));
+    const live = (1 - P(t, ct, ct + .35)) * fadeAll * (1 - m);
+    if (live > 0) {
+      const pts = r.S.map(s => { const p = proj(s.lon, s.lat, s.alt); return [cx + p[0] * R, cy - p[1] * R, p[2] > 0 || (p[0] * p[0] + p[1] * p[1]) > 1]; });
+      const n = Math.max(1, Math.floor(dp * 48));
+      const a = live * (r.chaos ? (.4 + .3 * Math.sin(t * 9 + i * 2)) : .95);
+      ctx.globalAlpha = a * .25; ctx.strokeStyle = '#FF9646'; ctx.lineWidth = 7 * sc; strokePts(pts, n);
+      ctx.globalAlpha = a; ctx.strokeStyle = r.chaos ? '#FF8A5C' : '#FFC48A'; ctx.lineWidth = (r.chaos ? 1.4 : 2.4) * sc; strokePts(pts, n);
+      ctx.fillStyle = '#FFF4E6';
+      if (dp < 1 && pts[n][2]) { ctx.beginPath(); ctx.arc(pts[n][0], pts[n][1], 4 * sc, 0, TAU); ctx.fill(); }
+      if (!r.chaos) {
+        for (let k = 0; k < 2; k++) {
+          const idx = Math.floor(((t * .22 + r.ph + k * .5) % 1) * 48);
+          if (idx < n && pts[idx][2]) { ctx.beginPath(); ctx.arc(pts[idx][0], pts[idx][1], 3.6 * sc, 0, TAU); ctx.fill(); }
+        }
+        [r.A, r.B].forEach(pt => { const p = proj(pt[0], pt[1], 1); if (p[2] > 0) { ctx.globalAlpha = a * .9; ctx.beginPath(); ctx.arc(cx + p[0] * R, cy - p[1] * R, 3.2 * sc, 0, TAU); ctx.fill(); } });
+      }
+    }
+    if (t > ct && pm[2] > 0) {
+      const q = P(t, ct, ct + .8), x = cx + pm[0] * R, y = cy - pm[1] * R;
+      ctx.globalAlpha = (1 - q) * .8 * fadeAll; ctx.strokeStyle = '#FF7A1A'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, (4 + 30 * eOut(q)) * Math.max(sc, .4), 0, TAU); ctx.stroke();
+      ctx.globalAlpha = fadeAll; ctx.fillStyle = '#FF7A1A';
+      ctx.shadowColor = '#FF7A1A'; ctx.shadowBlur = 14 * sc;
+      ctx.beginPath(); ctx.arc(x, y, (r.chaos ? 3.6 : 5.2) * Math.max(sc, .35) * (1 + .12 * Math.sin(t * 3 + i)), 0, TAU); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  });
+  // radar rings + sweep
+  const ra = eOut(P(t, 8.0, 8.6)) * fadeAll;
+  if (ra > 0) {
+    const lw = lerp(2.2, LOGO.r * 8 / 92, m);
+    ctx.strokeStyle = '#FF7A1A';
+    [[1, 1, 1], [.652, .5, .62], [.304, .35, .5]].forEach(([f, al, wf]) => {
+      ctx.globalAlpha = ra * lerp(al * .8, al, m); ctx.lineWidth = lw * wf;
+      ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, TAU); ctx.stroke();
+    });
+    ctx.globalAlpha = ra * .18 * (1 - m); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy); ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R); ctx.stroke();
+    if (t >= SW0) {
+      const a = swAng(t), span = 1.047, N = 24;
+      const ext = 1 - P(t, 9.55, 9.9);
+      ctx.fillStyle = '#FF7A1A';
+      for (let j = 0; j < N; j++) {
+        const a1 = a - span * j / N, a0 = a - span * (j + 1) / N, al = Math.pow(1 - j / N, 1.6);
+        ctx.globalAlpha = ra * .5 * al;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0, a1); ctx.closePath(); ctx.fill();
+        if (ext > 0) { ctx.globalAlpha = ra * .09 * al * ext; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R * 2.7, a0, a1); ctx.closePath(); ctx.fill(); }
+      }
+      ctx.globalAlpha = ra; ctx.lineWidth = lerp(3, LOGO.r * 7 / 92, m);
+      ctx.shadowColor = '#FF7A1A'; ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.stroke();
+      if (ext > 0) { ctx.globalAlpha = ra * .35 * ext; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.lineTo(cx + Math.cos(a) * R * 2.7, cy + Math.sin(a) * R * 2.7); ctx.stroke(); }
+      ctx.shadowBlur = 0;
+    }
+    ctx.globalAlpha = ra * m; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx, cy, LOGO.r * 9 / 92, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* =====================================================================
+   PORT SCENE
+   ===================================================================== */
+const port = $('#port'), shipEl = $('#ship'), planeEl = $('#plane'), liftRot = $('#liftRot'), liftBox = $('#liftBox'), trolley = $('#trolley');
+const shipX = t => lerp(1030, 760, Math.pow(P(t, 0, 8.6), 1.2));
+function planeState(t) {
+  const P0 = [330, 935], C = [860, 900], P1 = [1180, 730];
+  if (t <= 4.2) {
+    const s = P(t, .15, 4.2), u = 1 - s;
+    const x = u * u * P0[0] + 2 * u * s * C[0] + s * s * P1[0], y = u * u * P0[1] + 2 * u * s * C[1] + s * s * P1[1];
+    const dx = 2 * u * (C[0] - P0[0]) + 2 * s * (P1[0] - C[0]), dy = 2 * u * (C[1] - P0[1]) + 2 * s * (P1[1] - C[1]);
+    return [x, y, Math.atan2(dy, dx) / D2R * .7];
+  }
+  const k = t - 4.2, ang = Math.atan2(-170, 320);
+  return [P1[0] + Math.cos(ang) * 55 * k, P1[1] + Math.sin(ang) * 55 * k, ang / D2R * .7];
+}
+function updPort(t) {
+  const vis = t < 8.75; show(port, vis); if (!vis) return;
+  port.style.opacity = 1 - P(t, 8.0, 8.7);
+  shipEl.setAttribute('transform', `translate(${shipX(t)},${945 + Math.sin(t * 2.2) * 2}) rotate(${Math.sin(t * 1.7) * .6}) scale(.9)`);
+  const [px, py, pa] = planeState(t);
+  planeEl.setAttribute('transform', `translate(${px},${py}) rotate(${pa}) scale(.9)`);
+  planeEl.style.opacity = P(t, .1, .5);
+  const Tx = t < 1.3 ? 1426 : lerp(1426, 1765, eIO(P(t, 1.3, 2.7)));
+  const Hy = t < 1.3 ? lerp(830, 690, eIO(P(t, .5, 1.3))) : t < 2.7 ? 690 : lerp(690, 874, eIO(P(t, 2.7, 3.5)));
+  let sw = 7 * Math.sin(Math.PI * P(t, 1.3, 2.7)) * (t < 2.7 ? -1 : 0);
+  if (t >= 2.7) sw = 4 * Math.sin((t - 2.7) * 7) * Math.exp(-(t - 2.7) * 3);
+  if (t >= 3.5) sw = 0;
+  liftRot.setAttribute('transform', `translate(${Tx},612) rotate(${sw})`);
+  liftBox.setAttribute('transform', `translate(0,${Hy - 612})`);
+  $('#cab1').setAttribute('y2', Hy - 612); $('#cab2').setAttribute('y2', Hy - 612);
+  trolley.setAttribute('transform', `translate(${Tx},0)`);
+}
+
+function anchorPos(a, t) {
+  if (a === 'ship') return [shipX(t), 850];
+  if (a === 'plane') { const p = planeState(t); return [p[0], p[1]]; }
+  if (a === 'truck') return [1790, 860];
+  return [G.cx, G.cy];
+}
+function updChips(t) {
+  CHIPS.forEach(c => {
+    const vis = t >= c.t && t < 9.8; show(c.el, vis); if (!vis) return;
+    const an = anchorPos(c.anchor, t);
+    const x = an[0] + c.dx + Math.sin(t * 1.3 + c.t * 7) * 5, y = an[1] + c.dy + Math.cos(t * 1.1 + c.t * 5) * 4;
+    const ap = P(t, c.t, c.t + .35);
+    const f = P(t, capT(Math.atan2(y - G.cy, x - G.cx)), capT(Math.atan2(y - G.cy, x - G.cx)) + .3);
+    const sc = lerp(.4, 1, eBack(ap)) * lerp(1, .15, eIn(f));
+    c.el.style.opacity = P(t, c.t, c.t + .15) * (1 - f);
+    c.el.style.borderColor = f > 0 ? '#FF7A1A' : '';
+    c.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%) scale(${sc})`;
+  });
+}
+
+/* =====================================================================
+   LOGO
+   ===================================================================== */
+const logoBig = $('#logoBig'), lbIcon = logoBig.querySelector('svg'), lbWm = logoBig.querySelector('.wm'), lbSw = logoBig.querySelector('.sw');
+function updLogo(t) {
+  const vis = t >= 9.95 && t < 25.95; show(logoBig, vis); if (!vis) return;
+  lbIcon.style.opacity = P(t, 10.45, 10.75);
+  const w = eOut(P(t, 10.4, 10.95));
+  lbWm.style.opacity = P(t, 10.4, 10.6); lbWm.style.transform = `translateX(${(1 - w) * -40}px)`;
+  lbWm.style.clipPath = `inset(-20% ${(1 - w) * 100}% -20% 0)`;
+  lbSw.setAttribute('transform', `rotate(${(swAng(t) + Math.PI / 2) / D2R})`);
+  const e = eIO(P(t, 10.95, 11.5));
+  logoBig.style.transform = `translate(${(MINI.x - LOGO.L) * e}px,${(MINI.y - LOGO.T) * e}px) scale(${lerp(1, MINI.s, e)})`;
+  logoBig.style.opacity = 1 - P(t, 25.6, 25.95);
+}
+
+/* =====================================================================
+   LAPTOP: cockpit · dive · items · chat
+   ===================================================================== */
+const laptop = $('#laptop'), cam = $('#cam'), flash = $('#flash');
+const scrC = $('#scrCockpit'), scrI = $('#scrItems');
+function updLaptop(t) {
+  const vis = (t >= 11.15 && t < 15.97) || (t >= 19.3 && t < 26.7); show(laptop, vis);
+  if (t < 15.97) {
+    const s = eOut(P(t, 11.15, 11.95));
+    laptop.style.transform = `translateX(${(1 - s) * 1050}px) scale(${lerp(.92, 1, s)})`;
+    laptop.style.opacity = P(t, 11.15, 11.45);
+  } else {
+    const s = eOut(P(t, 19.3, 19.85));
+    laptop.style.transform = `scale(${lerp(.95, 1, s)})`;
+    laptop.style.opacity = s;
+  }
+  const d = P(t, 15.0, 15.95);
+  if (d > 0 && d < 1) {
+    const k = Math.exp(Math.log(160) * d * d), o = eIO(d);
+    cam.style.transform = `translate(${(1240 - DIVE.x) * o}px,${(480 - DIVE.y) * o}px) translate(${DIVE.x}px,${DIVE.y}px) scale(${k}) translate(${-DIVE.x}px,${-DIVE.y}px)`;
+  } else cam.style.transform = 'none';
+  const fo = Math.min(P(t, 15.55, 15.92), 1 - P(t, 15.95, 16.45));
+  show(flash, fo > 0);
+  if (fo > 0) { flash.style.opacity = fo; flash.style.background = 'radial-gradient(circle at 1240px 480px,#FFB070 0,#FF7A1A 35%,#B8480A 100%)'; }
+  show(scrC, t < 17); show(scrI, t >= 17);
+  if (t >= 11.15 && t < 16) updCockpit(t);
+  if (t >= 19.3) updItems(t);
+}
+function glowCss(g) {
+  return g > 0 ? `0 0 0 ${2.5 * g}px rgba(255,122,26,${g}),0 10px 26px rgba(255,122,26,${.28 * g})` : '';
+}
+function updCockpit(t) {
+  TILES.forEach(o => {
+    const h = eOut(P(t, o.t, o.t + .25)), g = h * (1 - .5 * P(t, o.t + .35, o.t + .9));
+    o.el.style.boxShadow = glowCss(g);
+    o.el.style.borderColor = g > 0 ? '#FF7A1A' : '';
+    o.el.style.transform = `translateY(${-3 * g}px)`;
+    o.tv.textContent = fmt(o.k * eOut(P(t, o.t - .15, o.t + .55)));
+  });
+  CARDS.forEach(o => {
+    const h = eOut(P(t, o.t, o.t + .25)), g = h * (1 - .5 * P(t, o.t + .35, o.t + .9));
+    o.el.style.boxShadow = glowCss(g); o.el.style.borderColor = g > 0 ? '#FF7A1A' : '';
+  });
+  BAR14.forEach((b, i) => b.style.transform = `scaleY(${eOut(P(t, 13.95 + i * .03, 14.4 + i * .03))})`);
+  DESTB.forEach((b, i) => b.style.transform = `scaleX(${eOut(P(t, 14.2 + i * .05, 14.7 + i * .05))})`);
+  DESTB.forEach(b => b.style.transformOrigin = 'left');
+  $('#mrSweep').setAttribute('transform', `rotate(${(t * 200) % 360})`);
+  const pulse = P(t, 14.4, 15.0);
+  $('#diveHalo').setAttribute('r', 9 + 3 * Math.sin(t * 7) + 8 * pulse);
+  $('#diveHalo').setAttribute('fill-opacity', .25 + .25 * pulse);
+}
+
+/* zoom scene: container → parcels → item */
+const zoom = $('#zoom'), ctr = $('#ctr'), zr = $('#zoomRings').getContext('2d');
+const doorL = $('.door.l'), doorR = $('.door.r'), clabel = $('.clabel');
+function updZoom(t) {
+  const vis = t >= 15.85 && t < 19.95; show(zoom, vis); if (!vis) return;
+  zoom.style.opacity = 1 - P(t, 19.4, 19.9);
+  zr.clearRect(0, 0, 1920, 1080);
+  zr.strokeStyle = '#FF7A1A';
+  for (let r = 170; r < 1100; r += 170) { zr.globalAlpha = .07; zr.lineWidth = 2; zr.beginPath(); zr.arc(1240, 480, r, 0, TAU); zr.stroke(); }
+  const a = t * 1.2;
+  for (let j = 0; j < 20; j++) { zr.globalAlpha = .06 * (1 - j / 20); zr.fillStyle = '#FF7A1A'; zr.beginPath(); zr.moveTo(1240, 480); zr.arc(1240, 480, 1100, a - .05 * (j + 1), a - .05 * j); zr.closePath(); zr.fill(); }
+  zr.globalAlpha = 1;
+  const ci = eBack(P(t, 15.9, 16.5));
+  ctr.style.transform = `scale(${lerp(.2, 1, ci)})`;
+  ctr.style.opacity = P(t, 15.9, 16.1) * (1 - .82 * eOut(P(t, 18.05, 18.5)));
+  clabel.style.opacity = P(t, 16.15, 16.5);
+  const o = eOut(P(t, 16.55, 17.15));
+  doorL.style.transform = `rotateY(${-108 * o}deg)`; doorR.style.transform = `rotateY(${108 * o}deg)`;
+  PARCELS.forEach(p => {
+    const st = 17.05 + p.i * .1, q = eOut(P(t, st, st + .6));
+    let x = lerp(1240, 1240 + (p.i - 2) * 170, q), y = lerp(500, 800, q) - Math.sin(Math.PI * q) * 60, sc = lerp(.35, 1, q);
+    let op = P(t, st, st + .15);
+    p.lab.style.opacity = P(t, st + .4, st + .7);
+    if (p.i === 2) {
+      const s2 = eIO(P(t, 18.05, 18.6));
+      x = lerp(x, 1240, s2); y = lerp(y, 575, s2); sc *= lerp(1, 1.7, s2);
+      op *= 1 - P(t, 19.0, 19.3);
+      const f = eOut(P(t, 18.45, 18.8));
+      p.fl.style.transform = `rotate(${-140 * f}deg)`; p.fr.style.transform = `rotate(${140 * f}deg)`;
+      p.lab.style.opacity *= 1 - s2;
+    } else op *= 1 - .82 * eOut(P(t, 18.05, 18.5));
+    p.el.style.opacity = op;
+    p.el.style.transform = `translate(${x}px,${y}px) scale(${sc})`;
+  });
+}
+
+const card = $('#card'), cardIn = card.querySelector('.in'), hlCells = $$('#hlRow td');
+function updCard(t) {
+  const vis = t >= 18.55 && t < 20.5; show(card, vis);
+  if (vis) {
+    const e1 = P(t, 18.6, 19.1), m = eIO(P(t, 19.45, 20.2));
+    card.style.left = lerp(CB.x, ROW.x, m) + 'px'; card.style.top = lerp(CB.y, ROW.y, m) + 'px';
+    card.style.width = lerp(CB.w, ROW.w, m) + 'px'; card.style.height = lerp(CB.h, ROW.h, m) + 'px';
+    card.style.transform = `translateY(${(1 - eOut(e1)) * 90}px) scale(${lerp(.15, 1, eBack(e1))})`;
+    card.style.borderRadius = lerp(18, 4, m) + 'px';
+    card.style.background = `rgb(255,${lerp(255, 244, m) | 0},${lerp(255, 234, m) | 0})`;
+    card.style.opacity = P(t, 18.55, 18.7) * (1 - P(t, 20.2, 20.5));
+    cardIn.style.opacity = 1 - P(t, 19.45, 19.65);
+  }
+  const hl = P(t, 20.1, 20.45), pulse = hl * (.5 + .5 * Math.cos((t - 20.45) * 6)) * (1 - P(t, 20.6, 22));
+  hlCells.forEach((td, i) => {
+    td.style.background = hl > 0 ? `rgba(255,122,26,${.13 * hl + .14 * pulse})` : '';
+    if (i === 0) td.style.boxShadow = hl > 0 ? `inset 5px 0 0 rgba(255,122,26,${hl})` : '';
+  });
+}
+
+const chat = $('#chat'), typed = $('#typed'), caret = $('#caret'), msgU = $('#msgU'), msgA = $('#msgA'), aDots = $('#aDots'), aBody = $('#aBody');
+const evid = $('#evid'), check = $('#check'), checkPath = $('#checkPath'), evl = $('#evl');
+check.style.left = '576px'; check.style.top = '28px';
+function updItems(t) {
+  show(chat, t >= 20.9);
+  chat.style.transform = `translateX(${(1 - eOut(P(t, 21.0, 21.6))) * 470}px)`;
+  typed.textContent = t < 23.15 ? QUESTION.slice(0, Math.floor(QUESTION.length * P(t, 21.75, 23.0))) : '';
+  caret.style.opacity = (t > 21.75 && t < 23.0) || Math.floor(t * 2.6) % 2 ? 1 : .15;
+  if (t >= 23.15 && t < 23.4) caret.style.opacity = 0;
+  const q = eOut(P(t, 23.15, 23.4));
+  msgU.style.opacity = q; msgU.style.transform = `translateY(${(1 - q) * 14}px)`;
+  show(msgA, t >= 23.4);
+  const q2 = eOut(P(t, 23.4, 23.6));
+  msgA.style.opacity = q2; msgA.style.transform = `translateY(${(1 - q2) * 14}px)`;
+  aDots.style.display = t < 23.8 ? 'inline-flex' : 'none';
+  aDots.querySelectorAll('i').forEach((d, i) => d.style.transform = `translateY(${-4 * Math.abs(Math.sin(t * 8 + i))}px)`);
+  aBody.style.display = t < 23.8 ? 'none' : 'block';
+  aBody.style.opacity = P(t, 23.8, 24.0);
+  HB.forEach((b, i) => { const g = eOut(P(t, 23.9 + i * .08, 24.5 + i * .08)); b.bar.style.transform = `scaleX(${g})`; b.v.textContent = fmt(b.n * g); });
+  const ep = Math.sin(Math.PI * P(t, 24.35, 24.75));
+  evl.style.boxShadow = `0 0 0 ${6 * ep}px rgba(255,122,26,${.3 * ep})`;
+  show(evid, t >= 24.5);
+  const u = eOut(P(t, 24.55, 25.15));
+  evid.style.clipPath = `inset(0 0 0 ${(1 - u) * 100}% round 14px)`;
+  evid.style.opacity = P(t, 24.55, 24.7);
+  show(check, t >= 25.2);
+  const c = P(t, 25.2, 25.55), rq = P(t, 25.5, 26.1);
+  check.style.opacity = P(t, 25.2, 25.3);
+  check.style.transform = `scale(${lerp(2.6, 1, eBack(c))})`;
+  check.style.boxShadow = `0 10px 30px rgba(255,122,26,.5),0 0 0 ${26 * eOut(rq)}px rgba(255,122,26,${(1 - rq) * .35})`;
+  checkPath.style.strokeDashoffset = 40 * (1 - eOut(P(t, 25.45, 25.75)));
+}
+
+/* =====================================================================
+   CAPTIONS + END CARD
+   ===================================================================== */
+function updCaps(t) {
+  CAPS.forEach(c => {
+    const vis = t >= c.a - .01 && t < c.b; show(c.el, vis); if (!vis) return;
+    const out = 1 - P(t, c.b - .35, c.b);
+    c.words.forEach(w => {
+      const q = eOut(P(t, w.t, w.t + .5));
+      w.el.style.opacity = q * out;
+      w.el.style.transform = `translateY(${(1 - q) * 36 + (1 - out) * -16}px)`;
+    });
+    c.bar.style.opacity = out;
+    c.bar.style.transform = `scaleY(${eOut(P(t, c.a, c.a + .45))})`;
+  });
+}
+const endEl = $('#end'), endSweep = $('#endSweep'), endRings = $('#endRings'), endLogo = $('#endLogo'), endLogoSw = endLogo.querySelector('.sw');
+function updEnd(t) {
+  const vis = t >= 25.85; show(endEl, vis); if (!vis) return;
+  endEl.style.clipPath = `circle(${lerp(0, 1420, eIO(P(t, 25.85, 26.6)))}px at 1240px 480px)`;
+  const rr = eOut(P(t, 26.1, 27));
+  endRings.setAttribute('transform', `scale(${lerp(.7, 1, rr)})`); endRings.style.opacity = rr;
+  const deg = (t - 25.85) * 110;
+  endSweep.setAttribute('transform', `rotate(${deg})`); endSweep.style.opacity = rr;
+  const sa = -Math.PI / 2 + deg * D2R;
+  EBLIPS.forEach(b => { const rel = (((sa - b.a) % TAU) + TAU) % TAU; b.el.style.opacity = rr * (.2 + .8 * Math.exp(-rel * 2.2)); });
+  const q = P(t, 26.35, 26.95);
+  endLogo.style.opacity = P(t, 26.35, 26.6);
+  endLogo.style.transform = `scale(${lerp(.6, 1, eBack(q))})`;
+  endLogoSw.setAttribute('transform', `rotate(${(t - 26.35) * 140})`);
+  ENDW.forEach((w, i) => { const g = eOut(P(t, 26.95 + i * .09, 27.45 + i * .09)); w.style.opacity = g; w.style.transform = `translateY(${(1 - g) * 30}px)`; });
+  [['#eb1', 27.75], ['#eb2', 27.9]].forEach(([s, a]) => { const g = eOut(P(t, a, a + .4)); $(s).style.opacity = g; $(s).style.transform = `translateY(${(1 - g) * 20}px)`; });
+  const g = P(t, 28.3, 28.75), pl = t > 29 ? .5 + .5 * Math.sin((t - 29) * 5) : 0;
+  $('#cta').style.opacity = P(t, 28.3, 28.45);
+  $('#ctaBtn').style.transform = `scale(${lerp(.6, 1, eBack(g))})`;
+  $('#ctaBtn').style.boxShadow = `0 14px 34px rgba(255,122,26,.4),0 0 0 ${10 * pl}px rgba(255,122,26,${.18 * pl})`;
+}
+
+/* =====================================================================
+   MASTER RENDER
+   ===================================================================== */
+const sky = $('#sky'), sun = $('#sun');
+function render(t) {
+  sky.style.opacity = 1 - P(t, 8.0, 9.4); show(sky, t < 9.5);
+  sun.style.transform = `translateY(${lerp(70, 0, eOut(P(t, 0, 6)))}px) scale(${lerp(.9, 1.05, P(t, 0, 8))})`;
+  sun.style.opacity = lerp(.6, 1, P(t, 0, 3));
+  drawGlobe(t); updPort(t); updChips(t); updLogo(t); updLaptop(t); updZoom(t); updCard(t); updCaps(t); updEnd(t);
+}
+
+/* =====================================================================
+   PLAYBACK + CONTROLS
+   ===================================================================== */
+const qs = new URLSearchParams(location.search);
+let T = qs.has('t') ? clamp(+qs.get('t'), 0, DURATION) : 0;
+let playing = !qs.has('t') && qs.get('autoplay') !== '0';
+let loop = qs.get('loop') === '1', voOn = qs.get('vo') === '1', last = performance.now();
+if (qs.get('clean') === '1') document.body.classList.add('clean');
+const bPlay = $('#bPlay'), scrub = $('#scrub'), tm = $('#tm');
+function speak(txt) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(txt);
+  const v = speechSynthesis.getVoices().find(v => /en[-_](GB|US)/i.test(v.lang));
+  if (v) u.voice = v;
+  u.lang = 'en-GB'; u.rate = 1.04;
+  speechSynthesis.speak(u);
+}
+const voStop = () => { if ('speechSynthesis' in window) speechSynthesis.cancel(); };
+function syncUI() {
+  bPlay.textContent = playing ? '❚❚' : '▶';
+  $('#bLoop').classList.toggle('on', loop); $('#bVO').classList.toggle('on', voOn);
+}
+function seek(t) { T = clamp(t, 0, DURATION); voStop(); }
+function toggle() { if (!playing && T >= DURATION) seek(0); playing = !playing; if (!playing) voStop(); syncUI(); }
+function frame(now) {
+  const dt = Math.min(.1, (now - last) / 1000); last = now;
+  if (playing) {
+    const prev = T; T += dt;
+    if (voOn) VO.forEach(([vt, txt]) => { if (prev < vt && T >= vt) speak(txt); });
+    if (T >= DURATION) { if (loop) seek(0); else { T = DURATION; playing = false; syncUI(); } }
+  }
+  render(T);
+  scrub.value = T; tm.textContent = `${T.toFixed(1)} / ${DURATION.toFixed(1)} s`;
+  requestAnimationFrame(frame);
+}
+bPlay.onclick = toggle;
+$('#bRestart').onclick = () => { seek(0); playing = true; syncUI(); };
+scrub.oninput = () => { seek(+scrub.value); };
+$('#bVO').onclick = () => { voOn = !voOn; if (!voOn) voStop(); syncUI(); };
+$('#bLoop').onclick = () => { loop = !loop; syncUI(); };
+$('#bFs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  else if (e.key === 'r' || e.key === 'R') $('#bRestart').onclick();
+  else if (e.key === 'ArrowRight') seek(T + 1);
+  else if (e.key === 'ArrowLeft') seek(T - 1);
+  else if (e.key === 'v' || e.key === 'V') $('#bVO').onclick();
+  else if (e.key === 'l' || e.key === 'L') $('#bLoop').onclick();
+  else if (e.key === 'f' || e.key === 'F') $('#bFs').onclick();
+});
+let idleTimer;
+addEventListener('mousemove', () => { document.body.classList.remove('idle'); clearTimeout(idleTimer); idleTimer = setTimeout(() => playing && document.body.classList.add('idle'), 2200); });
+addEventListener('resize', fit);
+window.seekTo = t => { playing = false; seek(t); render(T); syncUI(); };
+
+measure();
+render(T);
+syncUI();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+</script>
+</body>
+</html>
